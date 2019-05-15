@@ -139,7 +139,8 @@ content_of_coordiantes <- create_grid(coordinates_grid = c(0, 10, 0, 10),
 ## Look up the strategy in the handbook to move through the grid
 
 # create a function that retrieves the number in the handbook of the current situation
-lookup_handbook <- function(situation, grid, latitude, longitude, content_of_coordiantes){
+lookup_handbook <- function(situation, grid, latitude = c(1, 0, 1, 2, 1),
+                            longitude  = c(1, 1, 2, 1, 0), content_of_coordiantes){
   which(situations$Current == grid[grid$latitude == latitude[1] &
                                      grid$longitude == longitude[1],]$content_of_coordinates &
           situations$North == grid[grid$latitude == latitude[2] &
@@ -152,31 +153,54 @@ lookup_handbook <- function(situation, grid, latitude, longitude, content_of_coo
                                      grid$longitude == longitude[5],]$content_of_coordinates)
 }
 
-# latitude <- c(1, 0, 1, 2, 1)
-# longitude <- c(1, 1, 2, 1, 0)
-lookup_handbook(situation = situations, grid = grid, latitude = c(1, 0, 1, 2, 1),
-                longitude = c(1, 1, 2, 1, 0), content_of_coordiantes = content_of_coordiantes)
 
-# whats in the first solutions handbook for these coordinates?
-first_population[[1]][169,]
-
-# let's assume the move said south - > change of coordinates
-latitude <- latitude +1
+handbook_number <- lookup_handbook(situation = situations, grid = grid,
+                content_of_coordiantes = content_of_coordiantes)
 
 
-# question: what happens if the robot stays or picks-up
-# in the handbook the movement on this site will always be the same, which means that
-# the robot will be stuck at that site??
+move <- function(population, handbook_number){
 
-# if he crashes into a wall, he bounces back
-if(individual_solution[169,]$Move == "North" & individual_solution[169,]$North == "Wall"){
-  individual_solution[169,]$Move <- "Stay"
-} else if (individual_solution[169,]$Move == "East" & individual_solution[169,]$East == "Wall"){
-  individual_solution[169,]$Move <- "Stay"
-} else if (individual_solution[169,]$Move == "South" & individual_solution[169,]$South == "Wall"){
-  individual_solution[169,]$Move <- "Stay"
-} else if(individual_solution[169,]$Move == "West" & individual_solution[169,]$West == "Wall"){
-  individual_solution[169,]$Move <- "Stay"
+  new_position <- NULL
+  latitude <- c(1, 0, 1, 2, 1)
+  longitude <- c(1, 1, 2, 1, 0)
+
+  for (i in 1:length(population)){
+    next_move <- population[[i]][handbook_number,]$Move
+
+    if (next_move == "North"){
+      new_position[i] <- latitude + 1
+    } else if (next_move == "East"){
+      new_position[i] <- longitude + 1
+    } else if (next_move == "South"){
+      new_position[i] <- latitude -1
+    } else if (next_move == "West"){
+      new_position[i] <- longitude +1
+    }
+
+    # if he crashes into a wall, he bounces back
+    if(population[[i]][handbook_number,]$Move == "North" &
+       population[[i]][handbook_number,]$North == "Wall"){
+       population[[i]][handbook_number,]$Move <- "Stay"
+    } else if (population[[i]][handbook_number,]$Move == "East" &
+               population[[i]][handbook_number,]$East == "Wall"){
+               population[[i]][handbook_number,]$Move <- "Stay"
+    } else if (population[[i]][handbook_number,]$Move == "South" &
+               population[[i]][handbook_number,]$South == "Wall"){
+               population[[i]][handbook_number,]$Move <- "Stay"
+    } else if(population[[i]][handbook_number,]$Move == "West" &
+              population[[i]][handbook_number,]$West == "Wall"){
+              population[[i]][handbook_number,]$Move <- "Stay"
+    }
+
+    # if he picks up sth the environment changes
+    if(population[[i]][handbook_number,]$Move == "Pick-Up" & population[[i]]$Current == "Evidence"){
+       population[[i]]$Current <- "Empty"
+    }
+
 }
+return(new_position)
+}
+
+
 
 
