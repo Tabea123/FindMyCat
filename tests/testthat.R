@@ -26,5 +26,6 @@ test_that("stop messages occur correctly", {
                                  moves = c("North", "East", "South",
                                            "West", "Stay", "Pick-Up")))
   expect_error(create_population(200, situations = situations, moves = 5))
-  expect_error(create_population(NA, situations = situations, moves = NA))
+  expect_error(create_population(NA, situations = NA, moves = NA))
+  expect_error(create_population(200, situations = "situations", moves = NA))
 })
