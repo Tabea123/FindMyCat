@@ -7,9 +7,18 @@
 # packages that are required
 devtools::use_package("gtools")
 
-# Creating a population of x individuals with y moves
-#' @return The population that contains x individual solutions
 
+#' Creating a population of x individuals with y moves
+#'
+#' @param individuals
+#' @param situations
+#' @param moves
+#'
+#' @return A population that contains x individual solutions for the y different
+#'         situations
+#' @export
+#'
+#' @examples
 create_population <- function(individuals, situations, moves){
 
   if(is.numeric(individuals) == FALSE){
@@ -43,7 +52,7 @@ for (j in 1:individuals){
 return(solutions_population)
 }
 
-## Create all possibles situations
+
 # There are five different sites each with three possibles types of content
 sites <- c("North", "East", "South", "West", "Current")
 content <- c("Wall", "Empty", "Evidence")
@@ -57,49 +66,59 @@ first_population <- create_population(individuals = 200, situations = situations
                                                 "West", "Stay", "Pick-Up"))
 
 ## Create the territory
-create_coordinates <- function(coordinates = c(xstart, xend, ystart, yend)){
+create_territory <- function(coordinates, evidence_latitude, evidence_longitude){
 
-  if(!any(is.numeric(c(xstart, xend, ystart, yend)))){
-    stop ("arguments have to be numeric") # coordinates have to be numeric
+  if(!any(is.numeric(coordinates))){
+    stop ("coordinates have to be numeric") # coordinates have to be numeric
   }
 
-  latitude  <- ystart:yend
-  longitude <- xstart:xend
+  longitude <- coordinates[1]:coordinates[2]
+  latitude <- coordinates[3]:coordinates[4]
 
   # create a dataframe that includes all coordinates of the grid
-  coordinates <- data.frame(latitude  = rep(latitude, length(latitude)),
-                            longitude = rep(longitude, each = length(longitude)))
+  df_coordinates <- data.frame(latitude  = rep(latitude, length(latitude)),
+                               longitude = rep(longitude, each = length(longitude)))
 
-  return(coordinates)
-}
+  # create a dataframe that includes the evidence
+  df_evidence <- data.frame(evidence_latitude, evidence_longitude)
 
-coordinates <- create_coordinates(coordinates = c(0,10, 0, 0))
-# size of territory should be given via input by the user later
-
-#  position of the evidence (e.g., footprints) on the grid
-# can be given via input by the user later
-footprints_latitude <- c(6, 1, 2, 5, 5, 6)
-footprints_longitude <- c(5, 8, 6, 6, 4, 3)
-
-df_footprints <- data.frame(latitude = footprints_latitude,
-                            longitude = footprints_longitude)
-
-# add the right type of content (wall, evidence or nothing) on the corresponding
-# coordinates on the grid
-content_of_coordinates <- character(length(coordinates$latitude))
-for(i in 1:length(coordinates$latitude)){
-  for(j in 1:length(df_footprints$latitude)){
-    if(coordinates$latitude[i] == df_footprints$latitude[j] && coordinates$longitude[i] == df_footprints$longitude[j]){
-      content_of_coordinates[i] <- content[3]
+  # add the right type of content (wall, evidence or nothing) on the corresponding
+  # coordinates on the grid
+  content_of_coordinates <- character(nrow(df_coordinates))
+  for(i in 1:nrow(df_coordinates)){
+    for(j in 1:nrow(df_evidence)){
+      if(df_coordinates$latitude[i] == df_evidence$evidence_latitude[j] &&
+         df_coordinates$longitude[i] == df_evidence$evidence_longitude[j]){
+        content_of_coordinates[i] <- "Evidence"
+      }
+    }
+    if(df_coordinates$latitude[i]  <= coordinates[3] ||
+       df_coordinates$latitude[i]  >= coordinates[4] ||
+       df_coordinates$longitude[i] <= coordinates[1] ||
+       df_coordinates$longitude[i] >= coordinates[2]){
+      content_of_coordinates[i] <- "Wall"
     }
   }
-  if(coordinates$latitude[i] <= ystart || coordinates$latitude[i] >= yend ||
-     coordinates$longitude[i] <= xstart || coordinates$longitude[i] >= xend){
-    content_of_coordinates[i] <- content[1]
-  }
+
+  content_of_coordinates[content_of_coordinates == ""] <- "Empty" # why doesn't this work if i just add else in the for-loop
+
+  return(list(df_coordinates, content_of_coordinates))
 }
 
-content_of_coordinates[content_of_coordinates == ""] <- content[2] # why doesn't this work if i just add else in the for-loop
+evidence_latitude <- c(6, 1, 2, 5, 5, 6)
+evidence_longitude <- c(5, 8, 6, 6, 4, 3)
+
+coordinates <- create_territory(coordinates = c(0, 10, 0, 10),
+                                evidence_latitude = evidence_latitude,
+                                evidence_longitude = evidence_longitude)[[1]]
+
+
+
+
+
+# size of territory and positions of evidence should be given via input
+# by the user with the shiny app
+
 
 # creating the grid
 grid <- cbind(coordinates, content_of_coordinates)
