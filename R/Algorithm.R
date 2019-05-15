@@ -139,6 +139,7 @@ content_of_coordiantes <- create_grid(coordinates_grid = c(0, 10, 0, 10),
 ## Look up the strategy in the handbook to move through the grid
 
 # create a function that retrieves the number in the handbook of the current situation
+# default for latitude and longitude are the start position (C, N, E, S, W)
 lookup_handbook <- function(situation, grid, latitude = c(1, 0, 1, 2, 1),
                             longitude  = c(1, 1, 2, 1, 0), content_of_coordiantes){
   which(situations$Current == grid[grid$latitude == latitude[1] &
@@ -160,22 +161,27 @@ handbook_number <- lookup_handbook(situation = situations, grid = grid,
 
 move <- function(population, handbook_number){
 
-  new_position <- NULL
   latitude <- c(1, 0, 1, 2, 1)
   longitude <- c(1, 1, 2, 1, 0)
+  new_position <- data.frame(matrix(nrow = 200, ncol = 10))
 
   for (i in 1:length(population)){
     next_move <- population[[i]][handbook_number,]$Move
 
     if (next_move == "North"){
-      new_position[i] <- latitude + 1
+      new_position[i, 1:5] <- latitude + 1
+      new_position[i, 6:10] <- longitude
     } else if (next_move == "East"){
-      new_position[i] <- longitude + 1
+      new_position[i, 1:5] <- latitude
+      new_position[i, 6:10] <- longitude + 1
     } else if (next_move == "South"){
-      new_position[i] <- latitude -1
+      new_position[i, 1:5] <- latitude - 1
+      new_position[i, 6:10] <- longitude
     } else if (next_move == "West"){
-      new_position[i] <- longitude +1
+      new_position[i, 1:5] <- latitude
+      new_position[i, 6:10] <- longitude + 1
     }
+  }
 
     # if he crashes into a wall, he bounces back
     if(population[[i]][handbook_number,]$Move == "North" &
@@ -192,13 +198,24 @@ move <- function(population, handbook_number){
               population[[i]][handbook_number,]$Move <- "Stay"
     }
 
+  for (i in 1:length(population)){
+    next_move <- population[[i]][handbook_number,]$Move
+
+    if (next_move == "Stay" || next_move == "Pick-Up"){
+      new_position[i, 1:5] <- latitude
+      new_position[i, 6:10] <- longitude
+    }
+  }
+
     # if he picks up sth the environment changes
     if(population[[i]][handbook_number,]$Move == "Pick-Up" & population[[i]]$Current == "Evidence"){
-       population[[i]]$Current <- "Empty"
+      population[[i]]$Current <- "Empty"
     }
 
-}
-return(new_position)
+  latitude <- new_position[,1:5]
+  longitude <- new_position[,6:10]
+
+ return(c(latitude, longitude))
 }
 
 
