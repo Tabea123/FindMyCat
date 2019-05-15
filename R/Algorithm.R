@@ -129,6 +129,9 @@ df_coordinates <- create_grid(coordinates_grid = c(0, 10, 0, 10),
                                 evidence_latitude = evidence_latitude,
                                 evidence_longitude = evidence_longitude)[,1:2]
 
+content_of_coordiantes <- create_grid(coordinates_grid = c(0, 10, 0, 10),
+                              evidence_latitude = evidence_latitude,
+                              evidence_longitude = evidence_longitude)[,3]
 
 # size of territory and positions of evidence should be given via input
 # by the user with the shiny app
@@ -136,18 +139,17 @@ df_coordinates <- create_grid(coordinates_grid = c(0, 10, 0, 10),
 ## Look up the strategy in the handbook to move through the grid
 
 # create a function that retrieves the number in the handbook of the current situation
-# default is the start at 1,1
-Handbook_latitude <- c(1, 0, 1, 2, 1)
-Handbook_longitude <- c(1, 1, 2, 1, 0)
-Handbook <- function(latitude = Handbook_latitude, longitude = Handbook_longitude){
-  which(situations$Current == grid[grid$latitude == Handbook_latitude[1] & grid$longitude == Handbook_longitude[1],]$content_of_coordinates &
-          situations$North == grid[grid$latitude == Handbook_latitude[2] & grid$longitude == Handbook_longitude[2],]$content_of_coordinates &
-          situations$East == grid[grid$latitude == Handbook_latitude[3] & grid$longitude == Handbook_longitude[3],]$content_of_coordinates &
-          situations$South == grid[grid$latitude == Handbook_latitude[4] & grid$longitude == Handbook_longitude[4],]$content_of_coordinates &
-          situations$West == grid[grid$latitude == Handbook_latitude[5] & grid$longitude == Handbook_longitude[5],]$content_of_coordinates)
+lookup_handbook <- function(situation, grid, latitude, longitude, content_of_coordiantes){
+  which(situations$Current == grid[grid$latitude == latitude[1] & grid$longitude == longitude[1],]$content_of_coordinates &
+          situations$North == grid[grid$latitude == latitude[2] & grid$longitude == longitude[2],]$content_of_coordinates &
+          situations$East  == grid[grid$latitude == latitude[3] & grid$longitude == longitude[3],]$content_of_coordinates &
+          situations$South == grid[grid$latitude == latitude[4] & grid$longitude == longitude[4],]$content_of_coordinates &
+          situations$West  == grid[grid$latitude == latitude[5] & grid$longitude == longitude[5],]$content_of_coordinates)
 }
 
-x <- Handbook()
+# latitude <- c(1, 0, 1, 2, 1)
+# longitude <- c(1, 1, 2, 1, 0)
+
 # whats in the handbook for these coordinates?
 individual_solution[x,]
 # let's assume the move said east - > change of coordinates when move east
