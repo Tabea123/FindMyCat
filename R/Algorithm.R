@@ -7,30 +7,34 @@
 # packages that are required
 devtools::use_package("gtools")
 
-## Create a data frame of all 243 situations
+## Create all possibles situations
 # There are five different sites each with three possibles types of content
-# 3^5
 sites <- c("North", "East", "South", "West", "Current")
 content <- c("Wall", "Empty", "Evidence")
-#get all permutations and  make a dataframe with all situations and sites
-situations <- data.frame(permutations(n=3,r=5,v=content,repeats.allowed=T))
+situations <- create_situations(sites, content)
 colnames(situations) <- sites
 
-## Create the first population of 200 individuals
+
+## Create the first population of X individuals
+
+population <- function(individuals){
+
 solutions_population <- list()
 
-for (j in 1:200){
+for (j in 1:individuals){
   # generating a sequence of 243 random Movements
   Move <- character(243)
   for(i in 1:243){
     Move[i] <- sample(c("North", "East", "South", "West", "Stay", "Pick-Up"), 1)
   }
-  # storing the Movements next to the situations
+  # storing the movements next to the situations
   individual_solution <- data.frame(situations, Move)
   # creating a dataframe with all 200 individuals
   solutions_population[[j]] <- individual_solution
 }
+}
 
+first_population <- population(200)
 
 ## Create the territory
 # size (can be given via input later)
