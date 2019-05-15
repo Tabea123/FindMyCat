@@ -140,23 +140,29 @@ content_of_coordiantes <- create_grid(coordinates_grid = c(0, 10, 0, 10),
 
 # create a function that retrieves the number in the handbook of the current situation
 lookup_handbook <- function(situation, grid, latitude, longitude, content_of_coordiantes){
-  which(situations$Current == grid[grid$latitude == latitude[1] & grid$longitude == longitude[1],]$content_of_coordinates &
-          situations$North == grid[grid$latitude == latitude[2] & grid$longitude == longitude[2],]$content_of_coordinates &
-          situations$East  == grid[grid$latitude == latitude[3] & grid$longitude == longitude[3],]$content_of_coordinates &
-          situations$South == grid[grid$latitude == latitude[4] & grid$longitude == longitude[4],]$content_of_coordinates &
-          situations$West  == grid[grid$latitude == latitude[5] & grid$longitude == longitude[5],]$content_of_coordinates)
+  which(situations$Current == grid[grid$latitude == latitude[1] &
+                                     grid$longitude == longitude[1],]$content_of_coordinates &
+          situations$North == grid[grid$latitude == latitude[2] &
+                                     grid$longitude == longitude[2],]$content_of_coordinates &
+          situations$East  == grid[grid$latitude == latitude[3] &
+                                     grid$longitude == longitude[3],]$content_of_coordinates &
+          situations$South == grid[grid$latitude == latitude[4] &
+                                     grid$longitude == longitude[4],]$content_of_coordinates &
+          situations$West  == grid[grid$latitude == latitude[5] &
+                                     grid$longitude == longitude[5],]$content_of_coordinates)
 }
 
 # latitude <- c(1, 0, 1, 2, 1)
 # longitude <- c(1, 1, 2, 1, 0)
+lookup_handbook(situation = situations, grid = grid, latitude = c(1, 0, 1, 2, 1),
+                longitude = c(1, 1, 2, 1, 0), content_of_coordiantes = content_of_coordiantes)
 
-# whats in the handbook for these coordinates?
-individual_solution[x,]
-# let's assume the move said east - > change of coordinates when move east
-Handbook_longitude <- Handbook_longitude +1
-# whats in the hanbook for these cooridnates?
-y <- Handbook()
-individual_solution[y,]
+# whats in the first solutions handbook for these coordinates?
+first_population[[1]][169,]
+
+# let's assume the move said south - > change of coordinates
+latitude <- latitude +1
+
 
 # question: what happens if the robot stays or picks-up
 # in the handbook the movement on this site will always be the same, which means that
