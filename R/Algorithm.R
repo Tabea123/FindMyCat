@@ -7,47 +7,74 @@
 # packages that are required
 devtools::use_package("gtools")
 
-## Create all possibles situations
-# There are five different sites each with three possibles types of content
-sites <- c("North", "East", "South", "West", "Current")
-content <- c("Wall", "Empty", "Evidence")
-situations <- create_situations(sites, content)
-colnames(situations) <- sites
+# Creating a population of x individuals with y moves
+#' @return The population that contains x individual solutions
 
+create_population <- function(individuals, situations, moves){
 
-## Create the first population of X individuals
+  if(is.numeric(individuals) == FALSE){
+    stop ("argument 'individuals' must be numeric") # individuals has to be numeric
+  }
 
-population <- function(individuals){
+  if(is.data.frame(situations) == FALSE){
+    stop ("add a data.frame of possible situations")
+  }
+
+  if(!any(is.character(moves))){
+    stop ("please indicate the possible moves as characters") # moves has to be characters
+  }
 
 solutions_population <- list()
 
 for (j in 1:individuals){
-  # generating a sequence of 243 random Movements
-  Move <- character(243)
-  for(i in 1:243){
-    Move[i] <- sample(c("North", "East", "South", "West", "Stay", "Pick-Up"), 1)
+  # generating a sequence of as much random Movements as there are situations
+  Move <- character(nrow(situations))
+
+  for(i in 1:nrow(situations)){
+    Move[i] <- sample(moves, 1)
   }
+
   # storing the movements next to the situations
   individual_solution <- data.frame(situations, Move)
+
   # creating a dataframe with all 200 individuals
   solutions_population[[j]] <- individual_solution
 }
+return(solutions_population)
 }
 
-first_population <- population(200)
+## Create all possibles situations
+# There are five different sites each with three possibles types of content
+sites <- c("North", "East", "South", "West", "Current")
+content <- c("Wall", "Empty", "Evidence")
+
+situations <- data.frame(permutations(n = length(content), r = length(sites),
+                                      v = content, repeats.allowed = T))
+colnames(situations) <- sites
+
+first_population <- create_population(individuals = 200, situations = situations,
+                                      moves = c("North", "East", "South",
+                                                "West", "Stay", "Pick-Up"))
 
 ## Create the territory
-# size (can be given via input later)
-xstart <- 0
-xend <- 10
-ystart <- 0
-yend <- 10
+create_coordinates <- function(coordinates = c(xstart, xend, ystart, yend)){
 
-latitude <- ystart:yend
-longitude <- xstart:xend
+  if(!any(is.numeric(c(xstart, xend, ystart, yend)))){
+    stop ("arguments have to be numeric") # coordinates have to be numeric
+  }
 
-# create a dataframe that includes all coordinates of the grid
-coordinates <- data.frame(latitude = rep(latitude, 11), longitude = rep(longitude, each = 11))
+  latitude  <- ystart:yend
+  longitude <- xstart:xend
+
+  # create a dataframe that includes all coordinates of the grid
+  coordinates <- data.frame(latitude  = rep(latitude, length(latitude)),
+                            longitude = rep(longitude, each = length(longitude)))
+
+  return(coordinates)
+}
+
+coordinates <- create_coordinates(coordinates = c(0,10, 0, 0))
+# size of territory should be given via input by the user later
 
 #  position of the evidence (e.g., footprints) on the grid
 # can be given via input by the user later
