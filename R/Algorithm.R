@@ -7,6 +7,7 @@
 # packages that are required
 devtools::use_package("gtools")
 
+## Create the first population with random movements
 
 #' Creating a population of x individuals with y moves
 #'
@@ -65,15 +66,27 @@ first_population <- create_population(individuals = 200, situations = situations
                                       moves = c("North", "East", "South",
                                                 "West", "Stay", "Pick-Up"))
 
-## Create the territory
-create_territory <- function(coordinates, evidence_latitude, evidence_longitude){
+## Create the grid
 
-  if(!any(is.numeric(coordinates))){
-    stop ("coordinates have to be numeric") # coordinates have to be numeric
+#' Function to create the grid in the right size with the evidence positions
+#' included
+#'
+#' @param coordinates_grid
+#' @param evidence_latitude
+#' @param evidence_longitude
+#'
+#' @return
+#' @export
+#'
+#' @examples
+create_grid <- function(coordinates_grid, evidence_latitude, evidence_longitude){
+
+  if(!any(is.numeric(coordinates_grid))){
+    stop ("coordinates_grid have to be numeric") # coordinates_grid have to be numeric
   }
 
-  longitude <- coordinates[1]:coordinates[2]
-  latitude <- coordinates[3]:coordinates[4]
+  longitude <- coordinates_grid[1]:coordinates_grid[2]
+  latitude <-  coordinates_grid[3]:coordinates_grid[4]
 
   # create a dataframe that includes all coordinates of the grid
   df_coordinates <- data.frame(latitude  = rep(latitude, length(latitude)),
@@ -85,43 +98,42 @@ create_territory <- function(coordinates, evidence_latitude, evidence_longitude)
   # add the right type of content (wall, evidence or nothing) on the corresponding
   # coordinates on the grid
   content_of_coordinates <- character(nrow(df_coordinates))
+
   for(i in 1:nrow(df_coordinates)){
+
     for(j in 1:nrow(df_evidence)){
-      if(df_coordinates$latitude[i] == df_evidence$evidence_latitude[j] &&
+
+      if(df_coordinates$latitude[i]  == df_evidence$evidence_latitude[j] &&
          df_coordinates$longitude[i] == df_evidence$evidence_longitude[j]){
         content_of_coordinates[i] <- "Evidence"
       }
     }
-    if(df_coordinates$latitude[i]  <= coordinates[3] ||
-       df_coordinates$latitude[i]  >= coordinates[4] ||
-       df_coordinates$longitude[i] <= coordinates[1] ||
-       df_coordinates$longitude[i] >= coordinates[2]){
+    if(df_coordinates$latitude[i]  <= coordinates_grid[3] ||
+       df_coordinates$latitude[i]  >= coordinates_grid[4] ||
+       df_coordinates$longitude[i] <= coordinates_grid[1] ||
+       df_coordinates$longitude[i] >= coordinates_grid[2]){
       content_of_coordinates[i] <- "Wall"
     }
   }
-
   content_of_coordinates[content_of_coordinates == ""] <- "Empty" # why doesn't this work if i just add else in the for-loop
 
-  return(list(df_coordinates, content_of_coordinates))
+  grid <- cbind(df_coordinates, content_of_coordinates)
+  return(grid)
 }
 
-evidence_latitude <- c(6, 1, 2, 5, 5, 6)
-evidence_longitude <- c(5, 8, 6, 6, 4, 3)
+grid <- create_grid(coordinates_grid = c(0, 10, 0, 10),
+                    evidence_latitude = c(6, 1, 2, 5, 5, 6),
+                    evidence_longitude = c(5, 8, 6, 6, 4, 3))
 
-coordinates <- create_territory(coordinates = c(0, 10, 0, 10),
+df_coordinates <- create_grid(coordinates_grid = c(0, 10, 0, 10),
                                 evidence_latitude = evidence_latitude,
-                                evidence_longitude = evidence_longitude)[[1]]
-
-
-
+                                evidence_longitude = evidence_longitude)[,1:2]
 
 
 # size of territory and positions of evidence should be given via input
 # by the user with the shiny app
 
-
-# creating the grid
-grid <- cbind(coordinates, content_of_coordinates)
+## Look up the strategy in the handbook to move through the grid
 
 # create a function that retrieves the number in the handbook of the current situation
 # default is the start at 1,1
