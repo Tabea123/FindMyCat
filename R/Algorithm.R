@@ -95,8 +95,14 @@ create_grid <- function(coordinates_grid, evidence_latitude, evidence_longitude)
 
   if(length(coordinates_grid) != 4){
     stop ("Give four coordinates of the grid boundaries in the following manner:
-          x start, x end, y start, yend")
+          x start, x end, y start, y end")
   }
+
+  if(coordinates_grid[2] < coordinates_grid[1] | coordinates_grid[4] < coordinates_grid[3]){
+    stop ("Give four coordinates of the grid boundaries in the following manner:
+          x start, x end, y start, y end. Ends have to be higher than starts.")
+  }
+
 
   if(length(evidence_longitude) != length(evidence_latitude)){
     stop ("Give for each piece of evidence the corresponding longitude and latitude")
@@ -155,10 +161,19 @@ content_of_coordiantes <- create_grid(coordinates_grid = c(0, 10, 0, 10),
 
 ## Look up the strategy in the handbook to move through the grid
 
-# create a function that retrieves the number in the handbook of the current situation
-# default for latitude and longitude are the start position (C, N, E, S, W)
+#' A function that retrieves the number in the handbook of the current situation
+#'
+#' @param situation
+#' @param grid
+#' @param latitude
+#' @param longitude
+#'
+#' @return number in the handbook that correpsonds to robots situation
+#' @export
+#'
+#' @examples default for latitude and longitude are the start position (C, N, E, S, W)
 lookup_handbook <- function(situation, grid, latitude = c(1, 0, 1, 2, 1),
-                            longitude  = c(1, 1, 2, 1, 0), content_of_coordiantes){
+                            longitude  = c(1, 1, 2, 1, 0)){
   which(situations$Current == grid[grid$latitude == latitude[1] &
                                      grid$longitude == longitude[1],]$content_of_coordinates &
           situations$North == grid[grid$latitude == latitude[2] &
@@ -173,8 +188,7 @@ lookup_handbook <- function(situation, grid, latitude = c(1, 0, 1, 2, 1),
 
 # error messages are missing
 
-handbook_number <- lookup_handbook(situation = situations, grid = grid,
-                content_of_coordiantes = content_of_coordiantes)
+handbook_number <- lookup_handbook(situation = situations, grid = grid)
 
 # create a function that moves the robot through the grid according to his handbook
 move <- function(population, handbook_number, latitude, longitude){
@@ -236,4 +250,5 @@ move <- function(population, handbook_number, latitude, longitude){
 start_latitude <- c(1, 0, 1, 2, 1)
 start_longitude <- c(1, 1, 2, 1, 0)
 
+# need to add scoring directly to the moving
 
