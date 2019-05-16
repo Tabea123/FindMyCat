@@ -3,6 +3,7 @@ library(findmycat)
 
 test_check("findmycat")
 
+# function create_population
 test_that("create_population creates a list", {
   expect_equal(class(
     create_population(200, situations = situations,
@@ -29,3 +30,5 @@ test_that("stop messages occur correctly", {
   expect_error(create_population(NA, situations = NA, moves = NA))
   expect_error(create_population(200, situations = "situations", moves = NA))
 })
+
+# function create_grid
