@@ -82,7 +82,24 @@ first_population <- create_population(individuals = 200, situations = situations
 create_grid <- function(coordinates_grid, evidence_latitude, evidence_longitude){
 
   if(!any(is.numeric(coordinates_grid))){
-    stop ("coordinates_grid have to be numeric") # coordinates_grid have to be numeric
+    stop ("The coordinates have to be numeric") # coordinates_grid have to be numeric
+  }
+
+  if(!any(is.numeric(evidence_latitude))){
+    stop ("The coordinates of the evidence have to be numeric") # coordinates_grid have to be numeric
+  }
+
+  if(!any(is.numeric(evidence_longitude))){
+    stop ("The coordinates of the evidence have to be numeric") # coordinates_grid have to be numeric
+  }
+
+  if(length(coordinates_grid) != 4){
+    stop ("Give four coordinates of the grid boundaries in the following manner:
+          x start, x end, y start, yend")
+  }
+
+  if(length(evidence_longitude) != length(evidence_latitude)){
+    stop ("Give for each piece of evidence the corresponding longitude and latitude")
   }
 
   longitude <- coordinates_grid[1]:coordinates_grid[2]
@@ -126,12 +143,12 @@ grid <- create_grid(coordinates_grid = c(0, 10, 0, 10),
                     evidence_longitude = c(5, 8, 6, 6, 4, 3))
 
 df_coordinates <- create_grid(coordinates_grid = c(0, 10, 0, 10),
-                                evidence_latitude = evidence_latitude,
-                                evidence_longitude = evidence_longitude)[,1:2]
+                                evidence_latitude = c(6, 1, 2, 5, 5, 6),
+                                evidence_longitude = c(5, 8, 6, 6, 4, 3))[,1:2]
 
 content_of_coordiantes <- create_grid(coordinates_grid = c(0, 10, 0, 10),
-                              evidence_latitude = evidence_latitude,
-                              evidence_longitude = evidence_longitude)[,3]
+                              evidence_latitude = c(6, 1, 2, 5, 5, 6),
+                              evidence_longitude = c(5, 8, 6, 6, 4, 3))[,3]
 
 # size of territory and positions of evidence should be given via input
 # by the user with the shiny app
