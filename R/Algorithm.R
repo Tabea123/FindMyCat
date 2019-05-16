@@ -171,70 +171,69 @@ lookup_handbook <- function(situation, grid, latitude = c(1, 0, 1, 2, 1),
                                      grid$longitude == longitude[5],]$content_of_coordinates)
 }
 
+# error messages are missing
 
 handbook_number <- lookup_handbook(situation = situations, grid = grid,
                 content_of_coordiantes = content_of_coordiantes)
 
+# create a function that moves the robot through the grid according to his handbook
+move <- function(population, handbook_number, latitude, longitude){
 
-move <- function(population, handbook_number){
-
-  latitude <- c(1, 0, 1, 2, 1)
-  longitude <- c(1, 1, 2, 1, 0)
   new_position <- data.frame(matrix(nrow = 200, ncol = 10))
 
   for (i in 1:length(population)){
-    next_move <- population[[i]][handbook_number,]$Move
 
-    if (next_move == "North"){
-      new_position[i, 1:5] <- latitude + 1
+    next_move     <- population[[i]][handbook_number,]$Move
+    content_north <- population[[i]][handbook_number,]$North
+    content_east  <- population[[i]][handbook_number,]$East
+    content_south <- population[[i]][handbook_number,]$South
+    content_west  <- population[[i]][handbook_number,]$West
+
+    if (next_move == "North" & content_north != "Wall"){
+      new_position[i, 1:5]  <- latitude + 1
       new_position[i, 6:10] <- longitude
-    } else if (next_move == "East"){
-      new_position[i, 1:5] <- latitude
+    } else if (next_move == "East" & content_east != "Wall"){
+      new_position[i, 1:5]  <- latitude
       new_position[i, 6:10] <- longitude + 1
-    } else if (next_move == "South"){
-      new_position[i, 1:5] <- latitude - 1
+    } else if (next_move == "South" & content_south != "Wall"){
+      new_position[i, 1:5]  <- latitude - 1
       new_position[i, 6:10] <- longitude
-    } else if (next_move == "West"){
-      new_position[i, 1:5] <- latitude
+    } else if (next_move == "West" & content_west != "Wall"){
+      new_position[i, 1:5]  <- latitude
       new_position[i, 6:10] <- longitude + 1
+    } else  if (next_move == "North" & content_north == "Wall"){
+      new_position[i, 1:5]  <- latitude
+      new_position[i, 6:10] <- longitude
+    } else if (next_move == "East" & content_east == "Wall"){
+      new_position[i, 1:5]  <- latitude
+      new_position[i, 6:10] <- longitude
+    } else if (next_move == "South" & content_south == "Wall"){
+      new_position[i, 1:5]  <- latitude
+      new_position[i, 6:10] <- longitude
+    } else if(next_move == "West" & content_west == "Wall"){
+      new_position[i, 1:5]  <- latitude
+      new_position[i, 6:10] <- longitude
     }
-  }
-
-    # if he crashes into a wall, he bounces back
-    if(population[[i]][handbook_number,]$Move == "North" &
-       population[[i]][handbook_number,]$North == "Wall"){
-       population[[i]][handbook_number,]$Move <- "Stay"
-    } else if (population[[i]][handbook_number,]$Move == "East" &
-               population[[i]][handbook_number,]$East == "Wall"){
-               population[[i]][handbook_number,]$Move <- "Stay"
-    } else if (population[[i]][handbook_number,]$Move == "South" &
-               population[[i]][handbook_number,]$South == "Wall"){
-               population[[i]][handbook_number,]$Move <- "Stay"
-    } else if(population[[i]][handbook_number,]$Move == "West" &
-              population[[i]][handbook_number,]$West == "Wall"){
-              population[[i]][handbook_number,]$Move <- "Stay"
-    }
-
-  for (i in 1:length(population)){
-    next_move <- population[[i]][handbook_number,]$Move
 
     if (next_move == "Stay" || next_move == "Pick-Up"){
-      new_position[i, 1:5] <- latitude
+      new_position[i, 1:5]  <- latitude
       new_position[i, 6:10] <- longitude
     }
   }
 
+  for (i in 1:length(population)){
     # if he picks up sth the environment changes
-    if(population[[i]][handbook_number,]$Move == "Pick-Up" & population[[i]]$Current == "Evidence"){
-      population[[i]]$Current <- "Empty"
+    if(next_move == "Pick-Up" & population[[i]][handbook_number,]$Current == "Evidence"){
+      population[[i]][handbook_number,]$Current <- "Empty"
     }
+  }
 
   latitude <- new_position[,1:5]
   longitude <- new_position[,6:10]
-
- return(c(latitude, longitude))
+  return(data.frame(latitude, longitude))
 }
 
-
+start_latitude <- c(1, 0, 1, 2, 1)
+start_longitude <- c(1, 1, 2, 1, 0)
 
 
