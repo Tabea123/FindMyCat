@@ -32,3 +32,33 @@ test_that("stop messages occur correctly", {
 })
 
 # function create_grid
+test_that("stop messages occur correctly", {
+  expect_error(create_grid(coordinates_grid = c(1, b, 1, c),
+                           evidence_latitude = c(1, 2, 3),
+                           evidence_longitude = c(1, 2, 3)))
+
+  expect_error(create_grid(coordinates_grid = c(1, 9, 1, 9),
+                           evidence_latitude = c(1, b, 3),
+                           evidence_longitude = c(1, 2, 3)))
+
+  expect_error(create_grid(coordinates_grid = c(1, 9, 1),
+                           evidence_latitude = c(1, 2, 3),
+                           evidence_longitude = c(1, 2, 3)))
+
+  expect_error(create_grid(coordinates_grid = c(1, 9, 1, 9),
+                           evidence_latitude = c(1, 3),
+                           evidence_longitude = c(1, 2, 3)))
+})
+
+test_that("evidence outside the boarders gives a warning",{
+  expect_warning(create_grid(coordinates_grid = c(0, 10, 0, 10),
+                             evidence_latitude = c(0, 10, 3, 5, 8),
+                             evidence_longitude = c(9, 4, 5, 7, 1)),
+                 "Evidence outside the grid will not be considered")
+})
+
+test_that("create_grid creates a data.frame", {
+  expect_equal(class(create_grid(coordinates_grid = c(0, 10, 0, 10),
+                evidence_latitude = c(1, 2, 3),
+                evidence_longitude = c(1, 2, 3))), "data.frame")
+})
