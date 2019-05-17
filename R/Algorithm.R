@@ -226,8 +226,7 @@ lookup_handbook <- function(situation, grid, latitude = c(1, 0, 1, 2, 1),
 
 # create a function that moves the robot through the grid according to his handbook
 
-move_score <- function(population, handbook_number, latitude = c(1, 0, 1, 2, 1),
-                       longitude = c(1, 1, 2, 1, 0), score){
+move_score <- function(population, handbook_number, latitude, longitude, score){
 
   new_position <- data.frame(matrix(nrow = 200, ncol = 10))
 
@@ -241,38 +240,38 @@ move_score <- function(population, handbook_number, latitude = c(1, 0, 1, 2, 1),
     content_west  <- population[[i]][handbook_number[i],]$West
 
     if (next_move == "North" & content_north != "Wall"){
-      new_position[i, 1:5]  <- latitude - 1
-      new_position[i, 6:10] <- longitude
+      new_position[i, 1:5]  <- as.numeric(latitude[i,]) - 1
+      new_position[i, 6:10] <- as.numeric(longitude[i,])
     } else if (next_move == "East" & content_east != "Wall"){
-      new_position[i, 1:5]  <- latitude
-      new_position[i, 6:10] <- longitude + 1
+      new_position[i, 1:5]  <- as.numeric(latitude[i,])
+      new_position[i, 6:10] <- as.numeric(longitude[i,]) + 1
     } else if (next_move == "South" & content_south != "Wall"){
-      new_position[i, 1:5]  <- latitude + 1
-      new_position[i, 6:10] <- longitude
+      new_position[i, 1:5]  <- as.numeric(latitude[i,]) + 1
+      new_position[i, 6:10] <- as.numeric(longitude[i,])
     } else if (next_move == "West" & content_west != "Wall"){
-      new_position[i, 1:5]  <- latitude
-      new_position[i, 6:10] <- longitude + 1
+      new_position[i, 1:5]  <- as.numeric(latitude[i,])
+      new_position[i, 6:10] <- as.numeric(longitude[i,]) + 1
     } else  if (next_move == "North" & content_north == "Wall"){
-      new_position[i, 1:5]  <- latitude
-      new_position[i, 6:10] <- longitude
+      new_position[i, 1:5]  <- as.numeric(latitude[i,])
+      new_position[i, 6:10] <- as.numeric(longitude[i,])
       score[i] <- score[i] - 5
     } else if (next_move == "East" & content_east == "Wall"){
-      new_position[i, 1:5]  <- latitude
-      new_position[i, 6:10] <- longitude
+      new_position[i, 1:5]  <- as.numeric(latitude[i,])
+      new_position[i, 6:10] <- as.numeric(longitude[i,])
       score[i] <- score[i] - 5
     } else if (next_move == "South" & content_south == "Wall"){
-      new_position[i, 1:5]  <- latitude
-      new_position[i, 6:10] <- longitude
+      new_position[i, 1:5]  <- as.numeric(latitude[i,])
+      new_position[i, 6:10] <- as.numeric(longitude[i,])
       score[i] <- score[i] - 5
     } else if(next_move == "West" & content_west == "Wall"){
-      new_position[i, 1:5]  <- latitude
-      new_position[i, 6:10] <- longitude
+      new_position[i, 1:5]  <- as.numeric(latitude[i,])
+      new_position[i, 6:10] <- as.numeric(longitude[i,])
       score[i] <- score[i] - 5
     }
 
     if (next_move == "Stay" || next_move == "Pick-Up"){
-      new_position[i, 1:5]  <- latitude
-      new_position[i, 6:10] <- longitude
+      new_position[i, 1:5]  <- as.numeric(latitude[i,])
+      new_position[i, 6:10] <- as.numeric(longitude[i,])
     }
   }
 
@@ -301,12 +300,16 @@ for (i in 1:length(first_population)){
   handbook_number[i] <- lookup_handbook(situation = situations, grid = grid)
 }
 
+# creating a data.frame with the current coordinates of the robot
+latitude <-  data.frame(matrix(rep(c(1, 0, 1, 2, 1), each = 200), ncol = 5, nrow = 200))
+longitude <-  data.frame(matrix(rep(c(1, 1, 2, 1, 0), each = 200), ncol = 5, nrow = 200))
+
 score <- numeric(length(first_population))
 
 new_coordinates <- move_score(population = first_population,
                               handbook_number = handbook_number,
+                              latitude = latitude, longitude = longitude,
                               score = score)
-
 
 
 latitude <- new_coordinates[,1:5]
@@ -320,12 +323,8 @@ for (i in 1:nrow(longitude)){
     longitude = as.numeric(longitude[i,])))
 }
 
-for(j in 1:length(first_population)){
-  print(move_score(population = first_population, handbook_number = handbook_number,
-             score = score, latitude = as.numeric(latitude[j,]),
-             longitude = as.numeric(longitude[j,])))
-}
-
-
+move_score(population = first_population, handbook_number = handbook_number,
+             score = score, latitude = latitude,
+             longitude = longitude)
 
 
