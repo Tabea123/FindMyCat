@@ -111,6 +111,14 @@ create_grid <- function(coordinates_grid, evidence_latitude, evidence_longitude)
     stop ("Give for each piece of evidence the corresponding longitude and latitude")
   }
 
+  if(any(evidence_latitude <= coordinates_grid[1] | evidence_latitude >= coordinates_grid[2])){
+    warning ("Evidence outside the grid will not be considered")
+  }
+
+  if(any(evidence_longitude <= coordinates_grid[3] | evidence_latitude >= coordinates_grid[4])){
+    warning ("Evidence outside the grid will not be considered")
+  }
+
   longitude <- coordinates_grid[1]:coordinates_grid[2]
   latitude <-  coordinates_grid[3]:coordinates_grid[4]
 
@@ -151,13 +159,13 @@ grid <- create_grid(coordinates_grid = c(0, 10, 0, 10),
                    evidence_latitude = c(6, 1, 2, 5, 5, 6),
                   evidence_longitude = c(5, 8, 6, 6, 4, 3))
 
-df_coordinates <- create_grid(coordinates_grid = c(0, 10, 0, 10),
-                             evidence_latitude = c(6, 1, 2, 5, 5, 6),
-                            evidence_longitude = c(5, 8, 6, 6, 4, 3))[,1:2]
-
-content_of_coordiantes <- create_grid(coordinates_grid = c(0, 10, 0, 10),
-                                     evidence_latitude = c(6, 1, 2, 5, 5, 6),
-                                    evidence_longitude = c(5, 8, 6, 6, 4, 3))[,3]
+# df_coordinates <- create_grid(coordinates_grid = c(0, 10, 0, 10),
+#                              evidence_latitude = c(6, 1, 2, 5, 5, 6),
+#                             evidence_longitude = c(5, 8, 6, 6, 4, 3))[,1:2]
+#
+# content_of_coordiantes <- create_grid(coordinates_grid = c(0, 10, 0, 10),
+#                                      evidence_latitude = c(6, 1, 2, 5, 5, 6),
+#                                     evidence_longitude = c(5, 8, 6, 6, 4, 3))[,3]
 
 # size of territory and positions of evidence should be given via input
 # by the user with the shiny app
@@ -306,6 +314,8 @@ longitude <-  data.frame(matrix(rep(c(1, 1, 2, 1, 0), each = 200), ncol = 5, nro
 
 score <- numeric(length(first_population))
 
+# let the robot walk 200 steps
+for (i in 1:200){
 new_coordinates <- move_score(population = first_population,
                               handbook_number = handbook_number,
                               latitude = latitude, longitude = longitude,
@@ -317,14 +327,20 @@ longitude <- new_coordinates[,6:10]
 score <- as.numeric(new_coordinates$score)
 
 handbook_number <- numeric(nrow(longitude))
-for (i in 1:nrow(longitude)){
-  handbook_number[i] <- as.numeric(lookup_handbook(
-    situation = situations, grid = grid, latitude = as.numeric(latitude[i,]),
-    longitude = as.numeric(longitude[i,])))
+for (j in 1:nrow(longitude)){
+  handbook_number[j] <- as.numeric(lookup_handbook(
+    situation = situations, grid = grid, latitude = as.numeric(latitude[j,]),
+    longitude = as.numeric(longitude[j,])))
+}
 }
 
-move_score(population = first_population, handbook_number = handbook_number,
-             score = score, latitude = latitude,
-             longitude = longitude)
+# After 200 steps in one grid configuration, change grid
+grid <- NULL
 
+evidence_latitude <- sample(1:9, 11, replace = T)
+evidence_longitude <- sample(1:9, 11, replace = T)
+grid <- create_grid(coordinates_grid = c(0, 10, 0, 10),
+                    evidence_latitude = c(0, 10, 3, 5, 8),
+                    evidence_longitude = c(9, 4, 5, 7, 1))
 
+# Do this 100 times
