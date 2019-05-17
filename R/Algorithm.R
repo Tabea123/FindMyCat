@@ -176,6 +176,39 @@ content_of_coordiantes <- create_grid(coordinates_grid = c(0, 10, 0, 10),
 #' @examples default for latitude and longitude are the start position
 lookup_handbook <- function(situation, grid, latitude = c(1, 0, 1, 2, 1),
                             longitude  = c(1, 1, 2, 1, 0)){
+
+  if(length(latitude) != 5){
+    stop ("Give five latitude coordinates (y-axis) of the grid in the following manner:
+          Current, North, East, South, West")
+  }
+
+  if(length(longitude) != 5){
+    stop ("Give five longitude coordinates (x-axis) of the grid in the following manner:
+          Current, North, East, South, West")
+  }
+
+  if(class(longitude) != "numeric"){
+    stop ("Coordinates have to be numeric. ")
+  }
+
+  if(class(latitude) != "numeric"){
+    stop ("Coordinates have to be numeric. ")
+  }
+
+  if(class(situation) != "data.frame"){
+    stop ("Give a data.frame of all possible situations")
+  }
+
+  if(class(grid) != "data.frame"){
+    stop ("Give a data.frame containing latitude, longitude,
+          and content on the respective coordinates")
+  }
+
+  if(length(grid) != 3){
+    stop ("Give a data.frame of length 3 containing latitude, longitude,
+          and content on the respective coordinates")
+  }
+
     which(situation[,1] == grid[grid[,1] == latitude[1] &
                                 grid[,2] == longitude[1],]$content_of_coordinates &
           situation[,2] == grid[grid[,1] == latitude[2] &
@@ -274,23 +307,23 @@ new_coordinates <- move_score(population = first_population,
                               handbook_number = handbook_number,
                               score = score)
 
-for(j in 1:length(first_population)){
 
-  latitude <- new_coordinates[,1:5]
-  longitude <- new_coordinates[,6:10]
-  score <- new_coordinates$score
 
-  handbook_number <- numeric(nrow(longitude))
-  for (i in 1:nrow(longitude)){
-    handbook_number[i] <- lookup_handbook(situation = situations, grid = grid,
-                                          latitude = as.numeric(latitude[i,]),
-                                          longitude = as.numeric(longitude[i,]))
+latitude <- new_coordinates[,1:5]
+longitude <- new_coordinates[,6:10]
+score <- as.numeric(new_coordinates$score)
+
+handbook_number <- numeric(nrow(longitude))
+for (i in 1:nrow(longitude)){
+  handbook_number[i] <- as.numeric(lookup_handbook(
+    situation = situations, grid = grid, latitude = as.numeric(latitude[i,]),
+    longitude = as.numeric(longitude[i,])))
 }
-  new_coordinates <- move_score(population = first_population,
-                                  handbook_number = handbook_number,
-                                  score = score, latitude = latitude,
-                                longitude = longitude)
 
+for(j in 1:length(first_population)){
+  print(move_score(population = first_population, handbook_number = handbook_number,
+             score = score, latitude = as.numeric(latitude[j,]),
+             longitude = as.numeric(longitude[j,])))
 }
 
 
