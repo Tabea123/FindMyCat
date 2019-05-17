@@ -190,14 +190,11 @@ lookup_handbook <- function(situation, grid, latitude = c(1, 0, 1, 2, 1),
 
 # error messages are missing
 
-for (i in 1:nrow(longitude_coordinates)){
-  handbook_number[i] <- lookup_handbook(situation = situations, grid = grid,)
-}
-
 
 # create a function that moves the robot through the grid according to his handbook
 
-move_score <- function(population, handbook_number, latitude, longitude, score){
+move_score <- function(population, handbook_number, latitude = c(1, 0, 1, 2, 1),
+                       longitude = c(1, 1, 2, 1, 0), score){
 
   new_position <- data.frame(matrix(nrow = 200, ncol = 10))
 
@@ -266,23 +263,36 @@ move_score <- function(population, handbook_number, latitude, longitude, score){
   return(data.frame(latitude, longitude, score))
 }
 
-start_latitude <- c(1, 0, 1, 2, 1)
-start_longitude <- c(1, 1, 2, 1, 0)
+handbook_number <- numeric(length(first_population))
+for (i in 1:length(first_population)){
+  handbook_number[i] <- lookup_handbook(situation = situations, grid = grid)
+}
+
 score <- numeric(length(first_population))
 
-new_coordinates <- move_score(first_population, handbook_number, start_latitude,
-                        start_longitude, score)
-latitude_coordinates <- new_coordinates[,1:5]
-longitude_coordinates <- new_coordinates[,6:10]
-score <- new_coordinates$score
+new_coordinates <- move_score(population = first_population,
+                              handbook_number = handbook_number,
+                              score = score)
 
-handbook_number2 <- numeric(nrow(longitude_coordinates))
-for (i in 1:nrow(longitude_coordinates)){
-  handbook_number2[i] <- lookup_handbook(situation = situations, grid = grid,
-                                     latitude = as.numeric(latitude_coordinates[i,]),
-                                     longitude = as.numeric(longitude_coordinates[i,]))
+for(j in 1:length(first_population)){
+
+  latitude <- new_coordinates[,1:5]
+  longitude <- new_coordinates[,6:10]
+  score <- new_coordinates$score
+
+  handbook_number <- numeric(nrow(longitude))
+  for (i in 1:nrow(longitude)){
+    handbook_number[i] <- lookup_handbook(situation = situations, grid = grid,
+                                          latitude = as.numeric(latitude[i,]),
+                                          longitude = as.numeric(longitude[i,]))
+}
+  new_coordinates <- move_score(population = first_population,
+                                  handbook_number = handbook_number,
+                                  score = score, latitude = latitude,
+                                longitude = longitude)
+
 }
 
 
-# need to add scoring directly to the moving
+
 
