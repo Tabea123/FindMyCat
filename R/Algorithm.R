@@ -13,36 +13,32 @@ devtools::use_package("gtools")
 #'
 #' @param individuals
 #' @param situations
-#' @param moves
 #'
 #' @return A population that contains x individual solutions for the y different
 #'         situations
 #' @export
 #'
 #' @examples
-create_population <- function(individuals, situations, moves){
+create_population <- function(individuals){
 
   if(is.numeric(individuals) == FALSE){
     stop ("argument 'individuals' must be numeric") # individuals has to be numeric
   }
 
-  if(is.data.frame(situations) == FALSE){
-    stop ("add a data.frame of possible situations")
-  }
-
-  if(!any(is.character(moves))){
-    stop ("please indicate the possible moves as characters") # moves has to be characters
-  }
-
 solutions_population <- list()
 
-for (j in 1:individuals){
-  # generating a sequence of as much random Movements as there are situations
-  Move <- character(nrow(situations))
+# There are five different sites each with three possibles types of content
+sites <- c("Current", "North", "East", "South", "West")
+content <- c("Wall", "Empty", "Evidence")
+situations <- data.frame(permutations(n = length(content), r = length(sites),
+                                      v = content, repeats.allowed = T))
+colnames(situations) <- sites
+moves <- c("North", "East", "South", "West", "Stay", "Pick-Up")
+Move <- character(nrow(situations))
 
-  for(i in 1:nrow(situations)){
-    Move[i] <- sample(moves, 1)
-  }
+for (j in 1:individuals){
+  # generating a sequence of as much random movements as there are situations
+  Move <- sample(moves, nrow(situations), replace = T)
 
   # storing the movements next to the situations
   individual_solution <- data.frame(situations, Move)
@@ -53,18 +49,7 @@ for (j in 1:individuals){
 return(solutions_population)
 }
 
-
-# There are five different sites each with three possibles types of content
-sites <- c("Current", "North", "East", "South", "West")
-content <- c("Wall", "Empty", "Evidence")
-
-situations <- data.frame(permutations(n = length(content), r = length(sites),
-                                      v = content, repeats.allowed = T))
-colnames(situations) <- sites
-
-first_population <- create_population(individuals = 200, situations = situations,
-                                      moves = c("North", "East", "South",
-                                                "West", "Stay", "Pick-Up"))
+first_population <- create_population(individuals = 200)
 
 ## Create the grid
 
@@ -149,7 +134,7 @@ create_grid <- function(coordinates_grid, evidence_latitude, evidence_longitude)
       content_of_coordinates[i] <- "Wall"
     }
   }
-  content_of_coordinates[content_of_coordinates == ""] <- "Empty" # why doesn't this work if i just add else in the for-loop
+  content_of_coordinates[content_of_coordinates == ""] <- "Empty"
 
   grid <- cbind(df_coordinates, content_of_coordinates)
   return(grid)
@@ -158,14 +143,6 @@ create_grid <- function(coordinates_grid, evidence_latitude, evidence_longitude)
 grid <- create_grid(coordinates_grid = c(0, 10, 0, 10),
                    evidence_latitude = c(6, 1, 2, 5, 5, 6),
                   evidence_longitude = c(5, 8, 6, 6, 4, 3))
-
-# df_coordinates <- create_grid(coordinates_grid = c(0, 10, 0, 10),
-#                              evidence_latitude = c(6, 1, 2, 5, 5, 6),
-#                             evidence_longitude = c(5, 8, 6, 6, 4, 3))[,1:2]
-#
-# content_of_coordiantes <- create_grid(coordinates_grid = c(0, 10, 0, 10),
-#                                      evidence_latitude = c(6, 1, 2, 5, 5, 6),
-#                                     evidence_longitude = c(5, 8, 6, 6, 4, 3))[,3]
 
 # size of territory and positions of evidence should be given via input
 # by the user with the shiny app
