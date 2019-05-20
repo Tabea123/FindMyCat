@@ -50,19 +50,7 @@ return(solutions_population)
 first_population <- create_population(individuals = 20)
 
 ## Create the grid
-
-#' Function to create the grid in the right size with the evidence positions
-#' included
-#'
-#' @param coordinates_grid
-#' @param evidence_latitude
-#' @param evidence_longitude
-#'
-#' @return
-#' @export
-#'
-#' @examples
-create_grid <- function(coordinates_grid, nevidence){
+create_grid <- function(coordinates_grid, n_evidence){
 
   if(!any(is.numeric(coordinates_grid))){
     # coordinates_grid have to be numeric
@@ -79,79 +67,12 @@ create_grid <- function(coordinates_grid, nevidence){
           x start, x end, y start, y end. Ends have to be higher than starts.")
   }
 
-  if(is.numeric(nevidence) == FALSE){
+  if(is.numeric(n_evidence) == FALSE){
     # number of evidence have to be numeric
     stop ("Indicate how much evidence (numeric) you want to place in the grid.")
   }
 
-  if(nevidence <= 0){
-    # there has to be evidence
-    stop ("Number evidence has to be more than 0.")
-  }
-
-
-  longitude <- coordinates_grid[1]:coordinates_grid[2]
-  latitude <-  coordinates_grid[3]:coordinates_grid[4]
-
-  # create a dataframe that includes all coordinates of the grid
-  df_coordinates <- data.frame(latitude  = rep(latitude, length(latitude)),
-                               longitude = rep(longitude, each = length(longitude)))
-
-  # create a dataframe that includes random evidence
-  evidence_latitude <- sample(1:coordinates_grid[4]-1, nevidence, replace = T)
-  evidence_longitude <- sample(1:coordinates_grid[2]-1, nevidence, replace = T)
-  df_evidence <- data.frame(evidence_latitude, evidence_longitude)
-
-  # add the right type of content (wall, evidence or nothing) on the corresponding
-  # coordinates on the grid
-  content_of_coordinates <- character(nrow(df_coordinates))
-
-  for(i in 1:nrow(df_coordinates)){
-
-    for(j in 1:nrow(df_evidence)){
-
-      if(df_coordinates$latitude[i]  == df_evidence$evidence_latitude[j] &&
-         df_coordinates$longitude[i] == df_evidence$evidence_longitude[j]){
-        content_of_coordinates[i] <- "Evidence"
-      }
-    }
-    if(df_coordinates$latitude[i]  <= coordinates_grid[3] ||
-       df_coordinates$latitude[i]  >= coordinates_grid[4] ||
-       df_coordinates$longitude[i] <= coordinates_grid[1] ||
-       df_coordinates$longitude[i] >= coordinates_grid[2]){
-      content_of_coordinates[i] <- "Wall"
-    }
-  }
-  content_of_coordinates[content_of_coordinates == ""] <- "Empty"
-
-  grid <- cbind(df_coordinates, content_of_coordinates)
-  return(grid)
-}
-
-create_grid2 <- function(coordinates_grid, nevidence){
-
-  if(!any(is.numeric(coordinates_grid))){
-    # coordinates_grid have to be numeric
-    stop ("The coordinates have to be numeric")
-  }
-
-  if(length(coordinates_grid) != 4){
-    stop ("Give four coordinates of the grid boundaries in the following manner:
-          x start, x end, y start, y end")
-  }
-
-  if(coordinates_grid[2] < coordinates_grid[1] | coordinates_grid[4] < coordinates_grid[3]){
-    stop ("Give four coordinates of the grid boundaries in the following manner:
-          x start, x end, y start, y end. Ends have to be higher than starts.")
-  }
-
-  if(is.numeric(nevidence) == FALSE){
-    # number of evidence have to be numeric
-    stop ("Indicate how much evidence (numeric) you want to place in the grid.")
-  }
-
-  if(nevidence <= 0){
-    # there has to be evidence
+  if(n_evidence <= 0){
     stop ("Number evidence has to be more than 0.")
   }
 
@@ -160,12 +81,12 @@ grid <- matrix(NA, coordinates_grid[2] + 2, coordinates_grid[4] + 2)
 grid[,1] <- grid[1,] <- grid[,12] <- grid[12,] <-  "Wall"
 grid[2:11,2:11] <- "Empty"
 # create evidence randomly and add it to the grid
-evidence <- sample(1:coordinates_grid[4]^2-1, nevidence, replace = F)
+evidence <- sample(1:coordinates_grid[4]^2-1, n_evidence, replace = F)
 grid[evidence] <- "Evidence"
 return(grid)
 }
 
-grid <- create_grid(coordinates_grid = c(0, 10, 0, 10), nevidence = 11)
+grid <- create_grid(coordinates_grid = c(0, 10, 0, 10), n_evidence = 11)
 
 # size of territory should be given via input by the user with the shiny app
 
@@ -181,36 +102,27 @@ grid <- create_grid(coordinates_grid = c(0, 10, 0, 10), nevidence = 11)
 #' @export
 #'
 #' @examples default for latitude and longitude are the start position
-lookup_handbook <- function(grid, latitude = c(1, 0, 1, 2, 1),
-                            longitude  = c(1, 1, 2, 1, 0)){
-# user soll nur current location angeben
-  if(length(latitude) != 5){
-    stop ("Give five latitude coordinates (y-axis) of the grid in the following manner:
-          Current, North, East, South, West")
-  }
+lookup_handbook <- function(grid, latitude = 2, longitude = 2){
 
-  if(length(longitude) != 5){
-    stop ("Give five longitude coordinates (x-axis) of the grid in the following manner:
-          Current, North, East, South, West")
+  if(length(latitude) != 1){
+    stop ("Give the current position of the robot on the y-axis.")
   }
-
+  if(length(longitude) != 1){
+    stop ("Give the current position of the robot on the x-axis.")
+  }
+  if(longitude <= 1 || longitude >= ncol(grid)){
+    stop ("The current position of the robot can't be outside the grid or on a wall.")
+  }
+  if(latitude <= 1 || latitude >= nrow(grid)){
+    stop ("The current position of the robot can't be outside the grid or on a wall.")
+  }
   if(class(longitude) != "numeric"){
     stop ("Coordinates have to be numeric.")
   }
-
   if(class(latitude) != "numeric"){
     stop ("Coordinates have to be numeric.")
   }
 
-  if(class(grid) != "data.frame"){
-    stop ("Give a data.frame containing latitude, longitude,
-          and content on the respective coordinates")
-  }
-
-  if(length(grid) != 3){
-    stop ("Give a data.frame of length 3 containing latitude, longitude,
-          and content on the respective coordinates")
-  }
 
   # There are five different sites each with three possibles types of content
   sites <- c("Current", "North", "East", "South", "West")
@@ -218,102 +130,100 @@ lookup_handbook <- function(grid, latitude = c(1, 0, 1, 2, 1),
   situation <- data.frame(permutations(n = length(content), r = length(sites),
                                         v = content, repeats.allowed = T))
 
+  # coordintes of the current field and north east south and west
+  latitude <- c(latitude, latitude - 1, latitude, latitude + 1, latitude)
+  longitude <- c(longitude, longitude, longitude + 1, longitude, longitude - 1)
+
   # looking up which number in the handbook corresponds to the current situation
-  number <- which(situation[,1] == grid[grid[,1] == latitude[1] &
-                                grid[,2] == longitude[1],]$content_of_coordinates &
-          situation[,2] == grid[grid[,1] == latitude[2] &
-                                grid[,2] == longitude[2],]$content_of_coordinates &
-          situation[,3] == grid[grid[,1] == latitude[3] &
-                                grid[,2] == longitude[3],]$content_of_coordinates &
-          situation[,4] == grid[grid[,1] == latitude[4] &
-                                grid[,2] == longitude[4],]$content_of_coordinates &
-          situation[,5] == grid[grid[,1] == latitude[5] &
-                                grid[,2] == longitude[5],]$content_of_coordinates)
+  number <- which(situation[,1] == grid[latitude[1], longitude[1]] &
+          situation[,2] == grid[latitude[2], longitude[2]] &
+          situation[,3] == grid[latitude[3], longitude[3]] &
+          situation[,4] == grid[latitude[4], longitude[4]] &
+          situation[,5] == grid[latitude[5], longitude[5]])
 
   return(number)
 }
 
-handbook_number <- numeric(length(first_population))
+situation <- numeric(length(first_population))
 for (i in 1:length(first_population)){
-  situation <- lookup_handbook(grid = grid)
+  situation[i] <- as.numeric(lookup_handbook(grid = grid))
 }
 
 
 # roxgen is missing
 # create a function that moves the robot through the grid according to his handbook
+move_score <- function(individual, grid, situation, latitude, longitude, steps, score){
 
-move_score <- function(population, handbook_number, latitude, longitude, score){
+  next_move     <- individual[situation,]$Move
 
-  new_position <- data.frame(matrix(nrow = length(population), ncol = 10))
+  latitude <- c(latitude, latitude - 1, latitude, latitude + 1, latitude)
+  longitude <- c(longitude, longitude, longitude + 1, longitude, longitude - 1)
+  content_current <- grid[latitude[1], longitude[1]]
+  content_north <- grid[latitude[2], longitude[2]]
+  content_east <- grid[latitude[3], longitude[3]]
+  content_south <- grid[latitude[4], longitude[4]]
+  content_west <- grid[latitude[5], longitude[5]]
 
-  for (i in 1:length(population)){
-    individual <- population[[i]]
-    situation <- handbook_number[i]
+  for(i in 1:steps){
+  # change of the current position of the robot according to the move that
+  # corresponds to his current position
+  if (next_move == "North" & content_north != "Wall"){
+    latitude[1]  <- latitude[1] - 1
+    longitude[1] <- longitude[1]
+  } else if (next_move == "East" & content_east != "Wall"){
+    latitude[1] <- latitude[1]
+    longitude[1] <- longitude[1] + 1
+  } else if (next_move == "South" & content_south != "Wall"){
+    latitude[1] <- latitude[1] + 1
+    longitude[1] <- longitude[1]
+  } else if (next_move == "West" & content_west != "Wall"){
+    latitude[1] <- latitude[1]
+    longitude[1] <- longitude[1] + 1
 
-    next_move     <- individual[situation,]$Move
-    content_current <- individual[situation,]$Current
-    content_north <- individual[situation,]$North
-    content_east  <- individual[situation,]$East
-    content_south <- individual[situation,]$South
-    content_west  <- individual[situation,]$West
-
-    # change position of the robot according to the move that is indicated in his handbook
-    if (next_move == "North" & content_north != "Wall"){
-      new_position[i, 1:5]  <- as.numeric(latitude[i,]) - 1
-      new_position[i, 6:10] <- as.numeric(longitude[i,])
-    } else if (next_move == "East" & content_east != "Wall"){
-      new_position[i, 1:5]  <- as.numeric(latitude[i,])
-      new_position[i, 6:10] <- as.numeric(longitude[i,]) + 1
-    } else if (next_move == "South" & content_south != "Wall"){
-      new_position[i, 1:5]  <- as.numeric(latitude[i,]) + 1
-      new_position[i, 6:10] <- as.numeric(longitude[i,])
-    } else if (next_move == "West" & content_west != "Wall"){
-      new_position[i, 1:5]  <- as.numeric(latitude[i,])
-      new_position[i, 6:10] <- as.numeric(longitude[i,]) + 1
-
-      # if he moves into a wall he bounces back to his old position and is fined 5 points
-    } else  if (next_move == "North" & content_north == "Wall"){
-      new_position[i, 1:5]  <- as.numeric(latitude[i,])
-      new_position[i, 6:10] <- as.numeric(longitude[i,])
-      score[i] <- score[i] - 5
-    } else if (next_move == "East" & content_east == "Wall"){
-      new_position[i, 1:5]  <- as.numeric(latitude[i,])
-      new_position[i, 6:10] <- as.numeric(longitude[i,])
-      score[i] <- score[i] - 5
-    } else if (next_move == "South" & content_south == "Wall"){
-      new_position[i, 1:5]  <- as.numeric(latitude[i,])
-      new_position[i, 6:10] <- as.numeric(longitude[i,])
-      score[i] <- score[i] - 5
-    } else if(next_move == "West" & content_west == "Wall"){
-      new_position[i, 1:5]  <- as.numeric(latitude[i,])
-      new_position[i, 6:10] <- as.numeric(longitude[i,])
-      score[i] <- score[i] - 5
-    }
-
-    # if he picks-up his location doesnt change
-    else if (next_move == "Stay"){
-      new_position[i, 1:5]  <- as.numeric(latitude[i,])
-      new_position[i, 6:10] <- as.numeric(longitude[i,])
-    }
-    # if he picks up sth his location doesnt change but the environment changes
-    else if(next_move == "Pick-Up" & content_current == "Evidence"){
-      new_position[i, 1:5]  <- as.numeric(latitude[i,])
-      new_position[i, 6:10] <- as.numeric(longitude[i,])
-      population[[i]][handbook_number,]$Current <- "Empty" # das grid aendert sich nur für den
-      score[i] <- score[i] + 10
-    }
-    # if he picks up but there is nothing, he is fined
-    else if(next_move == "Pick-Up" & content_current == "Empty"){
-      new_position[i, 1:5]  <- as.numeric(latitude[i,])
-      new_position[i, 6:10] <- as.numeric(longitude[i,])
-      score[i] <- score[i] - 1
-    }
+    # if he moves into a wall he bounces back to his old position and is fined 5 points
+  } else  if (next_move == "North" & content_north == "Wall"){
+    latitude[1] <- latitude[1]
+    longitude[1] <- longitude[1]
+    score <- score - 5
+  } else if (next_move == "East" & content_east == "Wall"){
+    latitude[1] <- latitude[1]
+    longitude[1] <- longitude[1]
+    score <- score - 5
+  } else if (next_move == "South" & content_south == "Wall"){
+    latidue <- latitude[1]
+    longitude[1] <- longitude[1]
+    score <- score - 5
+  } else if(next_move == "West" & content_west == "Wall"){
+    latitude[1] <- latitude[1]
+    longitude[1] <- longitude[1]
+    score <- score - 5
   }
 
-  latitude <- new_position[,1:5]
-  longitude <- new_position[,6:10]
-  return(data.frame(latitude, longitude, score))
+  # if he picks-up his location doesnt change
+  else if (next_move == "Stay"){
+    latitude[1] <- latitude[1]
+    longitude[1] <- longitude[1]
+  }
+  # if he picks up sth his location doesnt change but the environment changes
+  else if(next_move == "Pick-Up" & content_current == "Evidence"){
+    latitude[1] <- latitude[1]
+    longitude[1] <- longitude[1]
+    grid[latitude[1], longitude[1]] <- "Empty" # das grid aendert sich nur für den
+    score <- score + 10
+  }
+  # if he picks up but there is nothing, he is fined
+  else if(next_move == "Pick-Up" & content_current == "Empty"){
+    latitude[1] <- latitude[1]
+    longitude[1] <- longitude[1]
+    score <- score - 1
+
+  }
+  }
+  return(data.frame(latitude = latitude[1], longitude = longitude[1], score))
 }
+move_score2(first_population[[1]], grid, situation[1], latitude = 2, longitude = 2,
+            steps = 10, score = 0)
+
 
 # creating a data.frame with the current coordinates of the robot
 latitude <-  data.frame(matrix(rep(c(1, 0, 1, 2, 1), each = length(first_population)),
@@ -329,7 +239,7 @@ score <- numeric(length(first_population))
 # und dann lässt man diese funktion für alle individuen laufen
 for (i in 1:100){
 new_coordinates <- move_score(population = first_population,
-                              handbook_number = handbook_number,
+                              situation = situation,
                               latitude = latitude, longitude = longitude,
                               score = score)
 
@@ -349,7 +259,7 @@ print(handbook_number)
 # After 200 steps in one grid configuration, change grid
 
 grid <- NULL
-grid <- create_grid(coordinates_grid = c(0, 10, 0, 10), nevidence = 8)
+grid <- create_grid(coordinates_grid = c(0, 10, 0, 10), n_evidence = 8)
 
 # let the robot walk again
 for (i in 1:10){
