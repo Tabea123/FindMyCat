@@ -12,10 +12,8 @@ devtools::use_package("gtools")
 #' Creating a population of x individuals with y moves
 #'
 #' @param individuals
-#' @param situations
 #'
-#' @return A population that contains x individual solutions for the y different
-#'         situations
+#' @return A population that contains x individual solutions
 #' @export
 #'
 #' @examples
@@ -91,7 +89,6 @@ create_grid <- function(coordinates_grid, evidence_latitude, evidence_longitude)
           x start, x end, y start, y end. Ends have to be higher than starts.")
   }
 
-
   if(length(evidence_longitude) != length(evidence_latitude)){
     stop ("Give for each piece of evidence the corresponding longitude and latitude")
   }
@@ -159,7 +156,7 @@ grid <- create_grid(coordinates_grid = c(0, 10, 0, 10),
 #' @export
 #'
 #' @examples default for latitude and longitude are the start position
-lookup_handbook <- function(situation, grid, latitude = c(1, 0, 1, 2, 1),
+lookup_handbook <- function(grid, latitude = c(1, 0, 1, 2, 1),
                             longitude  = c(1, 1, 2, 1, 0)){
 
   if(length(latitude) != 5){
@@ -193,6 +190,12 @@ lookup_handbook <- function(situation, grid, latitude = c(1, 0, 1, 2, 1),
     stop ("Give a data.frame of length 3 containing latitude, longitude,
           and content on the respective coordinates")
   }
+
+  # There are five different sites each with three possibles types of content
+  sites <- c("Current", "North", "East", "South", "West")
+  content <- c("Wall", "Empty", "Evidence")
+  situation <- data.frame(permutations(n = length(content), r = length(sites),
+                                        v = content, repeats.allowed = T))
 
     which(situation[,1] == grid[grid[,1] == latitude[1] &
                                 grid[,2] == longitude[1],]$content_of_coordinates &
