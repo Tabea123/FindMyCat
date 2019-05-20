@@ -208,7 +208,7 @@ move_score <- function(individual, grid, situation, latitude, longitude, steps, 
   else if(next_move == "Pick-Up" & content_current == "Evidence"){
     latitude[1] <- latitude[1]
     longitude[1] <- longitude[1]
-    grid[latitude[1], longitude[1]] <- "Empty" # das grid aendert sich nur für den
+    grid[latitude[1], longitude[1]] <- "Empty"
     score <- score + 10
   }
   # if he picks up but there is nothing, he is fined
@@ -221,39 +221,10 @@ move_score <- function(individual, grid, situation, latitude, longitude, steps, 
   }
   return(data.frame(latitude = latitude[1], longitude = longitude[1], score))
 }
-move_score2(first_population[[1]], grid, situation[1], latitude = 2, longitude = 2,
-            steps = 10, score = 0)
 
+# currently the function doesn't change the move..
 
-# creating a data.frame with the current coordinates of the robot
-latitude <-  data.frame(matrix(rep(c(1, 0, 1, 2, 1), each = length(first_population)),
-                               ncol = 5, nrow = length(first_population)))
-longitude <-  data.frame(matrix(rep(c(1, 1, 2, 1, 0), each = length(first_population)),
-                                ncol = 5, nrow = length(first_population)))
-
-score <- numeric(length(first_population))
-
-# let the robot walk 10 steps
-
-# umdrehen: erst läuft ein individuum x schritte und nimmt auch das grid mit wegen pick-up
 # und dann lässt man diese funktion für alle individuen laufen
-for (i in 1:100){
-new_coordinates <- move_score(population = first_population,
-                              situation = situation,
-                              latitude = latitude, longitude = longitude,
-                              score = score)
-
-print(new_coordinates)
-latitude <- new_coordinates[,1:5]
-longitude <- new_coordinates[,6:10]
-score <- as.numeric(new_coordinates$score)
-
-for (j in 1:nrow(longitude)){
-  handbook_number[j] <- as.numeric(lookup_handbook(grid, as.numeric(latitude[j,]),
-                                                   as.numeric(longitude[j,])))
-}
-print(handbook_number)
-}
 
 # Do the following 100 times
 # After 200 steps in one grid configuration, change grid
@@ -262,21 +233,3 @@ grid <- NULL
 grid <- create_grid(coordinates_grid = c(0, 10, 0, 10), n_evidence = 8)
 
 # let the robot walk again
-for (i in 1:10){
-  new_coordinates <- move_score(population = first_population,
-                                handbook_number = handbook_number,
-                                latitude = latitude, longitude = longitude,
-                                score = score)
-
-
-  latitude <- new_coordinates[,1:5]
-  longitude <- new_coordinates[,6:10]
-  score <- as.numeric(new_coordinates$score)
-
-  handbook_number <- numeric(nrow(longitude))
-  for (j in 1:nrow(longitude)){
-    handbook_number[j] <- as.numeric(lookup_handbook(
-      grid = grid, latitude = as.numeric(latitude[j,]),
-      longitude = as.numeric(longitude[j,])))
-  }
-}
