@@ -47,7 +47,7 @@ for (j in 1:individuals){
 return(solutions_population)
 }
 
-first_population <- create_population(individuals = 20)
+first_population <- create_population(individuals = 200)
 
 ## Create the grid
 create_grid <- function(coordinates_grid, n_evidence){
@@ -78,11 +78,11 @@ create_grid <- function(coordinates_grid, n_evidence){
 
 # Create an empty grid and add the walls
 grid <- matrix(NA, coordinates_grid[2] + 2, coordinates_grid[4] + 2)
-grid[,1] <- grid[1,] <- grid[,12] <- grid[12,] <-  "Wall"
 grid[2:11,2:11] <- "Empty"
 # create evidence randomly and add it to the grid
-evidence <- sample(1:coordinates_grid[4]^2-1, n_evidence, replace = F)
+evidence <- sample(2:coordinates_grid[4]^2-1, n_evidence, replace = F)
 grid[evidence] <- "Evidence"
+grid[,1] <- grid[1,] <- grid[,12] <- grid[12,] <-  "Wall"
 return(grid)
 }
 
@@ -152,9 +152,12 @@ for (i in 1:length(first_population)){
 
 # roxgen is missing
 # create a function that moves the robot through the grid according to his handbook
-move_score <- function(individual, grid, situation, latitude, longitude, steps, score){
+move_score <- function(individual, grid, latitude, longitude, steps, score){
 
-  next_move     <- individual[situation,]$Move
+  for(i in 1:steps){
+  situation <- as.numeric(lookup_handbook(grid = grid, latitude = latitude,
+                                          longitude = longitude))
+  next_move <- individual[situation,]$Move
 
   latitude <- c(latitude, latitude - 1, latitude, latitude + 1, latitude)
   longitude <- c(longitude, longitude, longitude + 1, longitude, longitude - 1)
@@ -164,57 +167,57 @@ move_score <- function(individual, grid, situation, latitude, longitude, steps, 
   content_south <- grid[latitude[4], longitude[4]]
   content_west <- grid[latitude[5], longitude[5]]
 
-  for(i in 1:steps){
+
   # change of the current position of the robot according to the move that
   # corresponds to his current position
   if (next_move == "North" & content_north != "Wall"){
-    latitude[1]  <- latitude[1] - 1
-    longitude[1] <- longitude[1]
+    latitude  <- latitude[1] - 1
+    longitude <- longitude[1]
   } else if (next_move == "East" & content_east != "Wall"){
-    latitude[1] <- latitude[1]
-    longitude[1] <- longitude[1] + 1
+    latitude <- latitude[1]
+    longitude <- longitude[1] + 1
   } else if (next_move == "South" & content_south != "Wall"){
-    latitude[1] <- latitude[1] + 1
-    longitude[1] <- longitude[1]
+    latitude <- latitude[1] + 1
+    longitude <- longitude[1]
   } else if (next_move == "West" & content_west != "Wall"){
-    latitude[1] <- latitude[1]
-    longitude[1] <- longitude[1] + 1
+    latitude <- latitude[1]
+    longitude <- longitude[1] + 1
 
     # if he moves into a wall he bounces back to his old position and is fined 5 points
   } else  if (next_move == "North" & content_north == "Wall"){
-    latitude[1] <- latitude[1]
-    longitude[1] <- longitude[1]
+    latitude <- latitude[1]
+    longitude <- longitude[1]
     score <- score - 5
   } else if (next_move == "East" & content_east == "Wall"){
-    latitude[1] <- latitude[1]
-    longitude[1] <- longitude[1]
+    latitude <- latitude[1]
+    longitude <- longitude[1]
     score <- score - 5
   } else if (next_move == "South" & content_south == "Wall"){
     latidue <- latitude[1]
-    longitude[1] <- longitude[1]
+    longitude <- longitude[1]
     score <- score - 5
   } else if(next_move == "West" & content_west == "Wall"){
-    latitude[1] <- latitude[1]
-    longitude[1] <- longitude[1]
+    latitude <- latitude[1]
+    longitude <- longitude[1]
     score <- score - 5
   }
 
   # if he picks-up his location doesnt change
   else if (next_move == "Stay"){
-    latitude[1] <- latitude[1]
-    longitude[1] <- longitude[1]
+    latitude <- latitude[1]
+    longitude <- longitude[1]
   }
   # if he picks up sth his location doesnt change but the environment changes
   else if(next_move == "Pick-Up" & content_current == "Evidence"){
-    latitude[1] <- latitude[1]
-    longitude[1] <- longitude[1]
+    latitude <- latitude[1]
+    longitude <- longitude[1]
     grid[latitude[1], longitude[1]] <- "Empty"
     score <- score + 10
   }
   # if he picks up but there is nothing, he is fined
   else if(next_move == "Pick-Up" & content_current == "Empty"){
-    latitude[1] <- latitude[1]
-    longitude[1] <- longitude[1]
+    latitude <- latitude[1]
+    longitude <- longitude[1]
     score <- score - 1
 
   }
@@ -222,9 +225,12 @@ move_score <- function(individual, grid, situation, latitude, longitude, steps, 
   return(data.frame(latitude = latitude[1], longitude = longitude[1], score))
 }
 
-# currently the function doesn't change the move..
-
-# und dann lässt man diese funktion für alle individuen laufen
+# run this function for all individuals
+for(i in 1:length(first_population)){
+print(move_score(first_population[[i]], grid, latitude = 2, longitude = 2,
+                 steps = 100, score = 0))
+}
+# there is movement outside the grid or on a wall?
 
 # Do the following 100 times
 # After 200 steps in one grid configuration, change grid
