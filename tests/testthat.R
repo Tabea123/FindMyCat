@@ -4,61 +4,45 @@ library(findmycat)
 test_check("findmycat")
 
 # function create_population
-test_that("create_population creates a list", {
-  expect_equal(class(
-    create_population(200, situations = situations,
-                      moves = c("North", "East", "South", "West", "Stay", "Pick-Up"))),
-    "list")
-})
-
 test_that("the argument individuals works properly", {
-  expect_equal(length(
-    create_population(200, situations = situations,
-                      moves = c("North", "East", "South", "West", "Stay", "Pick-Up"))),
-    200)
-  expect_equal(length(
-    create_population(100, situations = situations,
-                      moves = c("North", "East", "South", "West", "Stay", "Pick-Up"))),
-    100)
+  expect_equal(length(create_population(200)), 200)
+  expect_equal(length(create_population(10)), 10)
 })
 
 test_that("stop messages occur correctly", {
-  expect_error(create_population("200", situations = situations,
-                                 moves = c("North", "East", "South",
-                                           "West", "Stay", "Pick-Up")))
-  expect_error(create_population(200, situations = situations, moves = 5))
-  expect_error(create_population(NA, situations = NA, moves = NA))
-  expect_error(create_population(200, situations = "situations", moves = NA))
+  expect_error(create_population("200"))
+  expect_error(create_population(NA))
+})
+
+test_that("first move is never stay", {
+  for(i in 1:100){
+  expect_false(create_population(100)[[i]]$Move[1] == "Stay")
+}
 })
 
 # function create_grid
-test_that("stop messages occur correctly", {
-  expect_error(create_grid(coordinates_grid = c(1, b, 1, c),
-                           evidence_latitude = c(1, 2, 3),
-                           evidence_longitude = c(1, 2, 3)))
+test_that("stop messages occur", {
+  expect_error(create_grid(coordinates_grid = c(1, b), n_evidence = 11))
 
-  expect_error(create_grid(coordinates_grid = c(1, 9, 1, 9),
-                           evidence_latitude = c(1, b, 3),
-                           evidence_longitude = c(1, 2, 3)))
+  expect_error(create_grid(coordinates_grid = c(1, 9, 1), n_evidence = 11))
 
-  expect_error(create_grid(coordinates_grid = c(1, 9, 1),
-                           evidence_latitude = c(1, 2, 3),
-                           evidence_longitude = c(1, 2, 3)))
-
-  expect_error(create_grid(coordinates_grid = c(1, 9, 1, 9),
-                           evidence_latitude = c(1, 3),
-                           evidence_longitude = c(1, 2, 3)))
+  expect_error(create_grid(coordinates_grid = c(9, 9), n_evidence = "footprints"))
 })
 
-test_that("evidence outside the boarders gives a warning",{
-  expect_warning(create_grid(coordinates_grid = c(0, 10, 0, 10),
-                             evidence_latitude = c(0, 10, 3, 5, 8),
-                             evidence_longitude = c(9, 4, 5, 7, 1)),
-                 "Evidence outside the grid will not be considered")
+test_that("create_grid creates a matrix", {
+  expect_equal(class(grid), "matrix")
 })
 
-test_that("create_grid creates a data.frame", {
-  expect_equal(class(create_grid(coordinates_grid = c(0, 10, 0, 10),
-                evidence_latitude = c(1, 2, 3),
-                evidence_longitude = c(1, 2, 3))), "data.frame")
+test_that("create_grid creates a wall at the boarders", {
+  for(i in 1:12){
+  expect_true(create_grid(coordinates_grid = c(10, 10), n_evidence = 11)[i,1] == "Wall")
+  expect_true(create_grid(coordinates_grid = c(10, 10), n_evidence = 11)[i,12] == "Wall")
+  expect_true(create_grid(coordinates_grid = c(10, 10), n_evidence = 11)[1,i] == "Wall")
+  expect_true(create_grid(coordinates_grid = c(10, 10), n_evidence = 11)[12,i] == "Wall")
+  }
+})
+
+test_that("create_grid creates as much evidence as the user indicates", {
+  expect_equal(sum(create_grid(coordinates_grid = c(10, 10), n_evidence = 11)
+                   == "Evidence"), 11)
 })
