@@ -52,7 +52,7 @@ for (j in 1:individuals){
 return(solutions_population)
 }
 
-first_population <- create_population(individuals = 200)
+first_population <- create_population(individuals = 20)
 
 ## Create the grid
 create_grid <- function(coordinates_grid, n_evidence){
@@ -143,22 +143,10 @@ lookup_handbook <- function(grid, latitude = 2, longitude = 2){
   return(number)
 }
 
-# lookup the position of the robot for each of the strategies
-situation <- numeric(length(first_population))
-for (i in 1:length(first_population)){
-  situation[i] <- as.numeric(lookup_handbook(grid = grid))
-}
-
+# for some reason there is movement outside the grid or on the walls
 
 # roxgen is missing
 # create a function that moves the robot through the grid according to his handbook
-for(i in 1:2){
-  x <- (lookup_handbook(grid = grid, latitude = latitude, longitude = longitude))
-  print(first_population[[1]][x,]$Move)
-  latitude <- latitude + 1
-  longitude <- longitude + 1
-}
-
 move_score <- function(individual, grid, latitude, longitude, steps, score){
 
   for(i in 1:steps){
@@ -236,17 +224,21 @@ move_score <- function(individual, grid, latitude, longitude, steps, score){
   return(data.frame(latitude, longitude, score))
 }
 
-# run this function for all individuals
-for(i in 1:length(first_population)){
-print(move_score(first_population[[i]], grid, latitude = 2, longitude = 2,
-                 steps = 100, score = 0))
+
+life <- function(population, steps, repetitions, coordinates_grid, n_evidence){
+  scores <- matrix(0, nrow = length(population), ncol = repetitions)
+  for(j in 1:repetitions){
+    for(i in 1:length(population)){
+      scores[i,j] <- move_score(population[[i]], grid, latitude = 2, longitude = 2,
+                                steps = steps, score = 0)$score
+    }
+    grid <- create_grid(coordinates_grid = coordinates_grid, n_evidence = n_evidence)
+  }
+return(scores)
 }
 
+all_scores <- life(first_population, 200, 100, coordinates_grid = c(10, 10), n_evidence = 11)
+mean_scores <- apply(all_scores, 1, mean)
 
-# Do the following 100 times
-# After 200 steps in one grid configuration, change grid
-
-grid <- NULL
-grid <- create_grid(coordinates_grid = c(0, 10, 0, 10), n_evidence = 8)
-
-# let the robot walk again
+which(mean_scores == sort(mean_scores, decreasing = TRUE)[1] |
+        mean_scores == sort(mean_scores, decreasing = TRUE)[2])
