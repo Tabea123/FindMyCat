@@ -166,8 +166,6 @@ move_score <- function(individual, grid, latitude, longitude, steps, score){
   situation <- as.numeric(lookup_handbook(grid, latitude, longitude))
   # next move that will be performed according to the handbook
   next_move <- individual[situation,]$Move
-  print(next_move)
-
 
   # needed for the moving and scoring:
   # coordintes of the current field and north east south and west
@@ -235,7 +233,7 @@ move_score <- function(individual, grid, latitude, longitude, steps, score){
 
   }
   }
-  return(data.frame(latitude = latitude, longitude = longitude, score))
+  return(data.frame(latitude, longitude, score))
 }
 
 # run this function for all individuals
