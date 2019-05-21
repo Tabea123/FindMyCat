@@ -38,6 +38,11 @@ for (j in 1:individuals){
   # generating a sequence of as much random movements as there are situations
   Move <- sample(moves, nrow(situations), replace = T)
 
+  if(Move[1] == "Stay"){
+    first_move <- c("North", "East", "South", "West", "Pick-Up")
+    Move <- sample(first_move, 1, replace = F)
+  }
+
   # storing the movements next to the situations
   individual_solution <- data.frame(situations, Move)
 
@@ -57,14 +62,8 @@ create_grid <- function(coordinates_grid, n_evidence){
     stop ("The coordinates have to be numeric")
   }
 
-  if(length(coordinates_grid) != 4){
-    stop ("Give four coordinates of the grid boundaries in the following manner:
-          x start, x end, y start, y end")
-  }
-
-  if(coordinates_grid[2] < coordinates_grid[1] | coordinates_grid[4] < coordinates_grid[3]){
-    stop ("Give four coordinates of the grid boundaries in the following manner:
-          x start, x end, y start, y end. Ends have to be higher than starts.")
+  if(length(coordinates_grid) != 2){
+    stop ("Give the length of the grid on the y-axis and x-axis")
   }
 
   if(is.numeric(n_evidence) == FALSE){
@@ -77,18 +76,19 @@ create_grid <- function(coordinates_grid, n_evidence){
   }
 
 # Create an empty grid and add the walls
-grid <- matrix(NA, coordinates_grid[2] + 2, coordinates_grid[4] + 2)
-grid[2:11,2:11] <- "Empty"
+grid <- matrix(NA, coordinates_grid[1], coordinates_grid[2])
+grid[1:nrow(grid),1:ncol(grid)] <- "Empty"
 # create evidence randomly and add it to the grid
-evidence <- sample(2:coordinates_grid[4]^2-1, n_evidence, replace = F)
+evidence <- sample(1:coordinates_grid[1]^2, n_evidence, replace = F)
 grid[evidence] <- "Evidence"
-grid[,1] <- grid[1,] <- grid[,12] <- grid[12,] <-  "Wall"
+grid <- rbind(grid, matrix("Wall", nrow = 1, ncol = coordinates_grid[2]))
+grid <- rbind(matrix("Wall", nrow = 1, ncol = coordinates_grid[2]), grid)
+grid <- cbind(grid, matrix("Wall", ncol = 1, nrow = coordinates_grid[2]+2))
+grid <- cbind(matrix("Wall", ncol = 1, nrow = coordinates_grid[2]+2), grid)
 return(grid)
 }
 
-grid <- create_grid(coordinates_grid = c(0, 10, 0, 10), n_evidence = 11)
-
-# size of territory should be given via input by the user with the shiny app
+grid <- create_grid(coordinates_grid = c(10, 10), n_evidence = 11)
 
 
 #' A function that retrieves the number in the handbook of the current situation
@@ -123,7 +123,6 @@ lookup_handbook <- function(grid, latitude = 2, longitude = 2){
     stop ("Coordinates have to be numeric.")
   }
 
-
   # There are five different sites each with three possibles types of content
   sites <- c("Current", "North", "East", "South", "West")
   content <- c("Wall", "Empty", "Evidence")
@@ -144,6 +143,7 @@ lookup_handbook <- function(grid, latitude = 2, longitude = 2){
   return(number)
 }
 
+# lookup the position of the robot for each of the strategies
 situation <- numeric(length(first_population))
 for (i in 1:length(first_population)){
   situation[i] <- as.numeric(lookup_handbook(grid = grid))
@@ -152,77 +152,90 @@ for (i in 1:length(first_population)){
 
 # roxgen is missing
 # create a function that moves the robot through the grid according to his handbook
+for(i in 1:2){
+  x <- (lookup_handbook(grid = grid, latitude = latitude, longitude = longitude))
+  print(first_population[[1]][x,]$Move)
+  latitude <- latitude + 1
+  longitude <- longitude + 1
+}
+
 move_score <- function(individual, grid, latitude, longitude, steps, score){
 
   for(i in 1:steps){
-  situation <- as.numeric(lookup_handbook(grid = grid, latitude = latitude,
-                                          longitude = longitude))
+  # current situation the robot finds itself in
+  situation <- as.numeric(lookup_handbook(grid, latitude, longitude))
+  # next move that will be performed according to the handbook
   next_move <- individual[situation,]$Move
+  print(next_move)
 
-  latitude <- c(latitude, latitude - 1, latitude, latitude + 1, latitude)
-  longitude <- c(longitude, longitude, longitude + 1, longitude, longitude - 1)
-  content_current <- grid[latitude[1], longitude[1]]
-  content_north <- grid[latitude[2], longitude[2]]
-  content_east <- grid[latitude[3], longitude[3]]
-  content_south <- grid[latitude[4], longitude[4]]
-  content_west <- grid[latitude[5], longitude[5]]
+
+  # needed for the moving and scoring:
+  # coordintes of the current field and north east south and west
+  yaxis <- c(latitude, latitude - 1, latitude, latitude + 1, latitude)
+  xaxis <- c(longitude, longitude, longitude + 1, longitude, longitude - 1)
+  # content on the current field and the fields around the robot
+  content_current <- grid[yaxis[1], xaxis[1]]
+  content_north <- grid[yaxis[2], xaxis[2]]
+  content_east <- grid[yaxis[3], xaxis[3]]
+  content_south <- grid[yaxis[4], xaxis[4]]
+  content_west <- grid[yaxis[5], xaxis[5]]
 
 
   # change of the current position of the robot according to the move that
   # corresponds to his current position
   if (next_move == "North" & content_north != "Wall"){
-    latitude  <- latitude[1] - 1
-    longitude <- longitude[1]
+    latitude  <- latitude - 1
+    longitude <- longitude
   } else if (next_move == "East" & content_east != "Wall"){
-    latitude <- latitude[1]
-    longitude <- longitude[1] + 1
+    latitude <- latitude
+    longitude <- longitude + 1
   } else if (next_move == "South" & content_south != "Wall"){
-    latitude <- latitude[1] + 1
-    longitude <- longitude[1]
+    latitude <- latitude + 1
+    longitude <- longitude
   } else if (next_move == "West" & content_west != "Wall"){
-    latitude <- latitude[1]
-    longitude <- longitude[1] + 1
+    latitude <- latitude
+    longitude <- longitude + 1
 
     # if he moves into a wall he bounces back to his old position and is fined 5 points
   } else  if (next_move == "North" & content_north == "Wall"){
-    latitude <- latitude[1]
-    longitude <- longitude[1]
+    latitude <- latitude
+    longitude <- longitude
     score <- score - 5
   } else if (next_move == "East" & content_east == "Wall"){
-    latitude <- latitude[1]
-    longitude <- longitude[1]
+    latitude <- latitude
+    longitude <- longitude
     score <- score - 5
   } else if (next_move == "South" & content_south == "Wall"){
-    latidue <- latitude[1]
-    longitude <- longitude[1]
+    latitude <- latitude
+    longitude <- longitude
     score <- score - 5
   } else if(next_move == "West" & content_west == "Wall"){
-    latitude <- latitude[1]
-    longitude <- longitude[1]
+    latitude <- latitude
+    longitude <- longitude
     score <- score - 5
   }
 
   # if he picks-up his location doesnt change
   else if (next_move == "Stay"){
-    latitude <- latitude[1]
-    longitude <- longitude[1]
+    latitude <- latitude
+    longitude <- longitude
   }
   # if he picks up sth his location doesnt change but the environment changes
   else if(next_move == "Pick-Up" & content_current == "Evidence"){
-    latitude <- latitude[1]
-    longitude <- longitude[1]
-    grid[latitude[1], longitude[1]] <- "Empty"
+    latitude <- latitude
+    longitude <- longitude
+    grid[xaxis[1], yaxis[1]] <- "Empty"
     score <- score + 10
   }
   # if he picks up but there is nothing, he is fined
   else if(next_move == "Pick-Up" & content_current == "Empty"){
-    latitude <- latitude[1]
-    longitude <- longitude[1]
+    latitude <- latitude
+    longitude <- longitude
     score <- score - 1
 
   }
   }
-  return(data.frame(latitude = latitude[1], longitude = longitude[1], score))
+  return(data.frame(latitude = latitude, longitude = longitude, score))
 }
 
 # run this function for all individuals
@@ -230,7 +243,7 @@ for(i in 1:length(first_population)){
 print(move_score(first_population[[i]], grid, latitude = 2, longitude = 2,
                  steps = 100, score = 0))
 }
-# there is movement outside the grid or on a wall?
+
 
 # Do the following 100 times
 # After 200 steps in one grid configuration, change grid
