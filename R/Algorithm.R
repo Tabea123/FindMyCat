@@ -227,16 +227,33 @@ life <- function(population, steps, repetitions, grid_size, n_evidence){
   scores <- matrix(0, nrow = length(population), ncol = repetitions)
   for(j in 1:repetitions){
     for(i in 1:length(population)){
-      scores[i,j] <- move_score(population[[i]], grid, latitude = 2, longitude = 2,
-                                steps = steps, score = 0)$score
+      scores[i,j] <- move_score(population[[i]], grid, steps = steps)$score
     }
     grid <- create_grid(grid_size = grid_size, n_evidence = n_evidence)
   }
 return(scores)
 }
 
-all_scores <- life(first_population, 20, 10, grid_size = c(10, 10), n_evidence = 11)
-mean_scores <- apply(all_scores, 1, mean)
+all_scores <- life(first_population, 50, 30, grid_size = c(10, 10), n_evidence = 11)
 
-which(mean_scores == sort(mean_scores, decreasing = TRUE)[1] |
-        mean_scores == sort(mean_scores, decreasing = TRUE)[2])
+
+evolve <- function(population, all_scores){
+  mean_scores <- apply(all_scores, 1, mean)
+
+  best_scores <- which(mean_scores == sort(mean_scores, decreasing = TRUE)[1] |
+          mean_scores == sort(mean_scores, decreasing = TRUE)[2])
+
+  parent1 <- first_population[[best_scores[1]]]
+  parent2 <- first_population[[best_scores[2]]]
+
+  new_population <- list()
+  for(i in 1:length(first_population)){
+  k <- sample(1:nrow(parent1), 1)
+  df1 <- parent1[1:k,]
+  df2 <- parent2[(k+1):nrow(parent2),]
+  dat <- rbind(df1, df2)
+  new_population[[i]] <- dat
+}
+}
+
+
