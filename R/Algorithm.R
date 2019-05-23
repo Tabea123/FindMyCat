@@ -19,6 +19,11 @@ devtools::use_package("gtools")
 #' @examples
 create_population <- function(individuals){
 
+  if (!requireNamespace("gtools", quietly = TRUE)) {
+    stop("Package \"gtools\" needed for this function to work. Please install it.",
+         call. = FALSE)
+  }
+
   if(is.numeric(individuals) == FALSE){
     stop ("argument 'individuals' must be numeric") # individuals has to be numeric
   }
@@ -237,7 +242,7 @@ life <- function(population, steps, repetitions, coordinates_grid, n_evidence){
 return(scores)
 }
 
-all_scores <- life(first_population, 200, 100, coordinates_grid = c(10, 10), n_evidence = 11)
+all_scores <- life(first_population, 20, 10, coordinates_grid = c(10, 10), n_evidence = 11)
 mean_scores <- apply(all_scores, 1, mean)
 
 which(mean_scores == sort(mean_scores, decreasing = TRUE)[1] |
