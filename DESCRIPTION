@@ -1,11 +1,22 @@
 Package: findmycat
 Type: Package
-Title: What the Package Does (Title Case)
+Title: An implementation of a genetic algorithm
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Authors@R: person("Tabea", "Hoffmann", email = "tabea.hoffmann@student.uva.nl",
+  role = c("aut", "cre"))
+Maintainer: tabea.hoffmann@student.uva.nl
+Description: Use four spaces when indenting paragraphs within the Description.
+    This package contains a genetic algorithm. The input to the genetic algorithm 
+    has several parts: 
+    a population of possible solutions to a task, an environment in which the task 
+    is performed and a fitness function that takes a solution and assigns to it 
+    a fitness value that measures how well that solution works on the task. 
+    The task in this package is to evolve the best strategy to pick up elements 
+    in a two-dimensional grid. 
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
+Imports: 
+    gtools
+Suggests: 
+    testthat
