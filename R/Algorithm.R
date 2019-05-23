@@ -8,17 +8,21 @@
 devtools::use_package("gtools")
 
 ## Create the first population with random movements
+# Creating a population of x individuals with y moves
+# A population that contains x individual solutions
 
-#' Creating a population of x individuals with y moves
+
+#' Creating a population of x individuals
 #'
 #' @param individuals
 #'
-#' @return A population that contains x individual solutions
+#' @return
 #' @export
 #'
 #' @examples
 create_population <- function(individuals){
 
+  # funktioniert nicht :(
   if (!requireNamespace("gtools", quietly = TRUE)) {
     stop("Package \"gtools\" needed for this function to work. Please install it.",
          call. = FALSE)
@@ -60,14 +64,15 @@ return(solutions_population)
 first_population <- create_population(individuals = 20)
 
 ## Create the grid
-create_grid <- function(coordinates_grid, n_evidence){
+# maybe delete n_evidence
+create_grid <- function(grid_size, n_evidence){
 
-  if(!any(is.numeric(coordinates_grid))){
-    # coordinates_grid have to be numeric
+  if(!any(is.numeric(grid_size))){
+    # grid_size have to be numeric
     stop ("The coordinates have to be numeric")
   }
 
-  if(length(coordinates_grid) != 2){
+  if(length(grid_size) != 2){
     stop ("Give the length of the grid on the y-axis and x-axis")
   }
 
@@ -81,32 +86,23 @@ create_grid <- function(coordinates_grid, n_evidence){
   }
 
 # Create an empty grid and add the walls
-grid <- matrix(NA, coordinates_grid[1], coordinates_grid[2])
-grid[1:nrow(grid),1:ncol(grid)] <- "Empty"
+grid <- matrix(NA, grid_size[1], grid_size[2])
+grid[0:nrow(grid),0:ncol(grid)] <- "Empty"
 # create evidence randomly and add it to the grid
-evidence <- sample(1:coordinates_grid[1]^2, n_evidence, replace = F)
+evidence <- sample(0:grid_size[1]^2, n_evidence, replace = F)
 grid[evidence] <- "Evidence"
-grid <- rbind(grid, matrix("Wall", nrow = 1, ncol = coordinates_grid[2]))
-grid <- rbind(matrix("Wall", nrow = 1, ncol = coordinates_grid[2]), grid)
-grid <- cbind(grid, matrix("Wall", ncol = 1, nrow = coordinates_grid[2]+2))
-grid <- cbind(matrix("Wall", ncol = 1, nrow = coordinates_grid[2]+2), grid)
+grid <- rbind(grid, matrix("Wall", nrow = 1, ncol = grid_size[2]))
+grid <- rbind(matrix("Wall", nrow = 1, ncol = grid_size[2]), grid)
+grid <- cbind(grid, matrix("Wall", ncol = 1, nrow = grid_size[2]+2))
+grid <- cbind(matrix("Wall", ncol = 1, nrow = grid_size[2]+2), grid)
 return(grid)
 }
 
-grid <- create_grid(coordinates_grid = c(10, 10), n_evidence = 11)
+grid <- create_grid(grid_size = c(10, 10), n_evidence = 11)
 
 
 #' A function that retrieves the number in the handbook of the current situation
-#'
-#' @param situation
-#' @param grid
-#' @param latitude
-#' @param longitude
-#'
-#' @return number in the handbook that correpsonds to robots situation
-#' @export
-#'
-#' @examples default for latitude and longitude are the start position
+
 lookup_handbook <- function(grid, latitude = 2, longitude = 2){
 
   if(length(latitude) != 1){
@@ -152,7 +148,7 @@ lookup_handbook <- function(grid, latitude = 2, longitude = 2){
 
 # roxgen is missing
 # create a function that moves the robot through the grid according to his handbook
-move_score <- function(individual, grid, latitude, longitude, steps, score){
+move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, score = 0){
 
   for(i in 1:steps){
   # current situation the robot finds itself in
@@ -204,45 +200,42 @@ move_score <- function(individual, grid, latitude, longitude, steps, score){
     latitude <- latitude
     longitude <- longitude
     score <- score - 5
-  }
 
-  # if he picks-up his location doesnt change
-  else if (next_move == "Stay"){
+    # if he picks-up his location doesnt change
+  } else if (next_move == "Stay"){
     latitude <- latitude
     longitude <- longitude
-  }
-  # if he picks up sth his location doesnt change but the environment changes
-  else if(next_move == "Pick-Up" & content_current == "Evidence"){
+
+    # if he picks up sth his location doesnt change but the environment changes
+  } else if(next_move == "Pick-Up" & content_current == "Evidence"){
     latitude <- latitude
     longitude <- longitude
     grid[xaxis[1], yaxis[1]] <- "Empty"
     score <- score + 10
-  }
-  # if he picks up but there is nothing, he is fined
-  else if(next_move == "Pick-Up" & content_current == "Empty"){
+    # if he picks up but there is nothing, he is fined
+  } else if(next_move == "Pick-Up" & content_current == "Empty"){
     latitude <- latitude
     longitude <- longitude
     score <- score - 1
-
   }
   }
   return(data.frame(latitude, longitude, score))
 }
 
 
-life <- function(population, steps, repetitions, coordinates_grid, n_evidence){
+life <- function(population, steps, repetitions, grid_size, n_evidence){
   scores <- matrix(0, nrow = length(population), ncol = repetitions)
   for(j in 1:repetitions){
     for(i in 1:length(population)){
       scores[i,j] <- move_score(population[[i]], grid, latitude = 2, longitude = 2,
                                 steps = steps, score = 0)$score
     }
-    grid <- create_grid(coordinates_grid = coordinates_grid, n_evidence = n_evidence)
+    grid <- create_grid(grid_size = grid_size, n_evidence = n_evidence)
   }
 return(scores)
 }
 
-all_scores <- life(first_population, 20, 10, coordinates_grid = c(10, 10), n_evidence = 11)
+all_scores <- life(first_population, 20, 10, grid_size = c(10, 10), n_evidence = 11)
 mean_scores <- apply(all_scores, 1, mean)
 
 which(mean_scores == sort(mean_scores, decreasing = TRUE)[1] |
