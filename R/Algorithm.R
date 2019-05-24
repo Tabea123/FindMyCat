@@ -7,83 +7,21 @@
 # packages that are required
 devtools::use_package("gtools")
 
-#' Creating A Population
-#'
-#' \code{create_poulation} creates a population of x individual solutions.
-#' The robot can look at 5 sites: the current field and the fields north, east,
-#' south, and west of him. Each of the sites can contain a wall, evidence or nothing.
-#' Following, the robot can be in 243 possible situations.
-#' For each individual strategy table is created: 243 moves are randomly sampled
-#' and assigned to each of the situations.
-#'
-#'
-#' @param individuals a number
-#'
-#' @return
-#' @export population a list containing a population of x data.frames of solutions
-#'
-#' @examples
-#' create_population(100)
-create_population <- function(individuals){
-
-  # funktioniert nicht :(
-  if (!requireNamespace("gtools", quietly = TRUE)) {
-    stop("Package \"gtools\" needed for this function to work. Please install it.",
-         call. = FALSE)
-  }
-
-  if(is.numeric(individuals) == FALSE){
-    stop ("argument 'individuals' must be numeric") # individuals has to be numeric
-  }
-
-  if(individuals <= 5){
-    stop ("The genepool of your population is too small.
-          The population needs to have more than five individuals")
-  }
-
-population <- list()
-
-# There are five different sites each with three possibles types of content
-sites <- c("Current", "North", "East", "South", "West")
-content <- c("Wall", "Empty", "Evidence")
-situations <- data.frame(permutations(n = length(content), r = length(sites),
-                                      v = content, repeats.allowed = T))
-colnames(situations) <- sites
-moves <- c("North", "East", "South", "West", "Stay", "Pick-Up") # an erster stelle kein stay
-Move <- character(nrow(situations))
-
-for (j in 1:individuals){
-  # generating a sequence of as much random movements as there are situations
-  Move <- sample(moves, nrow(situations), replace = T)
-
-  if(Move[1] == "Stay"){
-    first_move <- c("North", "East", "South", "West", "Pick-Up")
-    Move <- sample(first_move, 1, replace = F)
-  }
-
-  # storing the movements next to the situations
-  individual_solution <- data.frame(situations, Move)
-
-  # creating a dataframe with all 200 individuals
-  population[[j]] <- individual_solution
-}
-return(population)
-}
-
-first_population <- create_population(individuals = 20) # this function takes 0.007 secs
-
-# maybe delete n_evidence
 
 #' Creat A Grid
 #'
-#' \code{create_grid} creates a grid. The user can specify how big the grid is and
-#' how much evidence will be placed in the grid. There is a wall around the grid
-#' (first row, first column, last row, last column)
+#' \code{create_grid} creates a grid from the given set of values.
 #'
+#' @usage create_grid(grid_size, n_evidence)
 #'
 #' @param grid_size a numeric vector of the form c(max of x-axis, max of y-axis)
 #' which gives the size of the grid in x and y direction.
 #' @param n_evidence a numeric specifing the number of evidence in the grid.
+#'
+#' @details The user can specify how big the grid is and how much evidence will
+#' be placed in the grid. The function first creates a grid that is completely empty.
+#' The evidence is sampled and added to the grid. Finally a wall is being built
+#' around the grid.
 #'
 #' @return a matrix containing a grid
 #' @export
@@ -126,10 +64,77 @@ return(grid)
 
 grid <- create_grid(grid_size = c(10, 10), n_evidence = 11) # this function takes 0.001 secs
 
+#' Creating A Population
+#'
+#' \code{create_poulation} A function to create the primary population of candidate strategies.
+#'
+#' @usage create_population(individuals)
+#'
+#' @param individuals a number
+#'
+#' @details There are five sites: the current field and the fields north, east,
+#' south, and west of the robot. Each of the sites can contain a wall, evidence or nothing.
+#' Following, the robot can be in 243 possible situations.
+#' In each situation, the robot can perform one of the following six actions:
+#' move north, east, south, and west, stay in one field, or pick up something.
+#' An individual is one specific strategy to move through the grid.
+#' \code{create_poulation} creates for each individual in the population a random strategy table:
+#' 243 moves are randomly sampled and assigned to each of the situations.
+#'
+#' @return a list containing a population of x data.frames of solutions
+#' @export
+#'
+#' @examples
+#' create_population(100)
+create_population <- function(individuals){
 
-# A function that retrieves the number in the handbook of the current situation
+  # funktioniert nicht :(
+  if (!requireNamespace("gtools", quietly = TRUE)) {
+    stop("Package \"gtools\" needed for this function to work. Please install it.",
+         call. = FALSE)
+  }
 
-#' Retrieve the Number of the Current Situation
+  if(is.numeric(individuals) == FALSE){
+    stop ("argument 'individuals' must be numeric") # individuals has to be numeric
+  }
+
+  if(individuals <= 5){
+    stop ("The genepool of your population is too small.
+          The population needs to have more than five individuals")
+  }
+
+  population_of_strategies <- list()
+
+  # There are five different sites each with three possibles types of content
+  sites <- c("Current", "North", "East", "South", "West")
+  content <- c("Wall", "Empty", "Evidence")
+  situations <- data.frame(permutations(n = length(content), r = length(sites),
+                                        v = content, repeats.allowed = T))
+  colnames(situations) <- sites
+  moves <- c("North", "East", "South", "West", "Stay", "Pick-Up") # an erster stelle kein stay
+  Move <- character(nrow(situations))
+
+  for (j in 1:individuals){
+    # generating a sequence of as much random movements as there are situations
+    Move <- sample(moves, nrow(situations), replace = T)
+
+    if(Move[1] == "Stay"){
+      first_move <- c("North", "East", "South", "West", "Pick-Up")
+      Move <- sample(first_move, 1, replace = F)
+    }
+
+    # storing the movements next to the situations
+    individual_strategy <- data.frame(situations, Move)
+
+    # creating a dataframe with all 200 individuals
+    population_of_strategies[[j]] <- individual_strategy
+  }
+  return(population)
+}
+
+first_population <- create_population(individuals = 20) # this function takes 0.007 secs
+
+#' Retrieve from the Strategy Table the Number of the Current Situation
 #'
 #' \code{lookup_situation} looks up the robots current situation in his strategy table.
 #'
@@ -137,12 +142,10 @@ grid <- create_grid(grid_size = c(10, 10), n_evidence = 11) # this function take
 #' @param latitude a number indicating the current position of the robot on the y-axis.
 #' @param longitude a number indicating the current position of the robot on the xaxis.
 #'
-#' @details From wherever the robot is, he can see the content of one adjacent site
-#' in the north, south, east, and west, as well as the content of the site he occupies.
-#' To decide what to do next, the robot looks up his current situation in his strategytable.
-#' There he finds the corresponding action.
+#' @details To decide which move to perform, the robot looks up his current
+#' situation in his strategytable. There he finds the corresponding action.
 #'
-#' @return
+#' @return a number indicating which situation the robot is in
 #' @export
 #'
 #' @examples
@@ -192,6 +195,20 @@ lookup_situation <- function(grid, latitude = 2, longitude = 2){
 
 # roxgen is missing
 # create a function that moves the robot through the grid according to his handbook
+
+#' A function that Moves the Robot and Scores his Actions
+#'
+#' @param individual one individual strategy taken form the population made with \code{create_poulation}
+#' @param grid an object of class matrix made with \code{create_grid}
+#' @param latitude a number indicating the current position of the robot on the y-axis
+#' @param longitude a number indicating the current position of the robot on the x-axis
+#' @param steps a number indicating how many moves the robot should walk in the grid
+#' @param score a number indicating the current score of the strategy
+#'
+#' @return
+#' @export
+#'
+#' @examples
 move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, score = 0){
 
   for(i in 1:steps){
