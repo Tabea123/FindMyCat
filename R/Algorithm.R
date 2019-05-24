@@ -111,12 +111,12 @@ lookup_handbook <- function(grid, latitude = 2, longitude = 2){
   if(length(longitude) != 1){
     stop ("Give the current position of the robot on the x-axis.")
   }
-  if(longitude <= 1 || longitude >= ncol(grid)){
-    stop ("The current position of the robot can't be outside the grid or on a wall.")
-  }
-  if(latitude <= 1 || latitude >= nrow(grid)){
-    stop ("The current position of the robot can't be outside the grid or on a wall.")
-  }
+  # if(longitude <= 1 || longitude >= ncol(grid)){
+  #   stop ("The current position of the robot can't be outside the grid or on a wall.")
+  # }
+  # if(latitude <= 1 || latitude >= nrow(grid)){
+  #   stop ("The current position of the robot can't be outside the grid or on a wall.")
+  # }
   if(class(longitude) != "numeric"){
     stop ("Coordinates have to be numeric.")
   }
@@ -131,15 +131,15 @@ lookup_handbook <- function(grid, latitude = 2, longitude = 2){
                                         v = content, repeats.allowed = T))
 
   # coordintes of the current field and north east south and west
-  latitude <- c(latitude, latitude - 1, latitude, latitude + 1, latitude)
-  longitude <- c(longitude, longitude, longitude + 1, longitude, longitude - 1)
+  yaxis <- c(latitude, latitude - 1, latitude, latitude + 1, latitude)
+  xaxis <- c(longitude, longitude, longitude + 1, longitude, longitude - 1)
 
   # looking up which number in the handbook corresponds to the current situation
-  number <- which(situation[,1] == grid[latitude[1], longitude[1]] &
-          situation[,2] == grid[latitude[2], longitude[2]] &
-          situation[,3] == grid[latitude[3], longitude[3]] &
-          situation[,4] == grid[latitude[4], longitude[4]] &
-          situation[,5] == grid[latitude[5], longitude[5]])
+  number <- which(situation[,1] == grid[yaxis[1], xaxis[1]] &
+          situation[,2] == grid[yaxis[2], xaxis[2]] &
+          situation[,3] == grid[yaxis[3], xaxis[3]] &
+          situation[,4] == grid[yaxis[4], xaxis[4]] &
+          situation[,5] == grid[yaxis[5], xaxis[5]])
 
   return(number)
 }
