@@ -22,8 +22,6 @@ devtools::use_package("gtools")
 #' @examples
 create_population <- function(individuals){
 
-  start.t <- Sys.time()
-
   # funktioniert nicht :(
   if (!requireNamespace("gtools", quietly = TRUE)) {
     stop("Package \"gtools\" needed for this function to work. Please install it.",
@@ -65,14 +63,10 @@ for (j in 1:individuals){
   # creating a dataframe with all 200 individuals
   solutions_population[[j]] <- individual_solution
 }
-end.t <- Sys.time()
-timetaken <- end.t - start.t
-return(timetaken)
+return(solutions_population)
 }
-create_population(individuals = 20)
 
-
-first_population <- create_population(individuals = 20)
+first_population <- create_population(individuals = 20) # this functopn takes 0.007 secs
 
 ## Create the grid
 # maybe delete n_evidence
@@ -106,15 +100,16 @@ grid <- rbind(grid, matrix("Wall", nrow = 1, ncol = grid_size[2]))
 grid <- rbind(matrix("Wall", nrow = 1, ncol = grid_size[2]), grid)
 grid <- cbind(grid, matrix("Wall", ncol = 1, nrow = grid_size[2]+2))
 grid <- cbind(matrix("Wall", ncol = 1, nrow = grid_size[2]+2), grid)
+
 return(grid)
 }
 
-grid <- create_grid(grid_size = c(10, 10), n_evidence = 11)
+grid <- create_grid(grid_size = c(10, 10), n_evidence = 11) # this function takes 0.001 secs
 
 
 #' A function that retrieves the number in the handbook of the current situation
 
-lookup_handbook <- function(grid, latitude = 2, longitude = 2){
+lookup_situation <- function(grid, latitude = 2, longitude = 2){
 
   if(length(latitude) != 1){
     stop ("Give the current position of the robot on the y-axis.")
@@ -155,6 +150,7 @@ lookup_handbook <- function(grid, latitude = 2, longitude = 2){
   return(number)
 }
 
+# This function takes 0.0009 sec
 
 # roxgen is missing
 # create a function that moves the robot through the grid according to his handbook
@@ -162,7 +158,7 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, sco
 
   for(i in 1:steps){
   # current situation the robot finds itself in
-  situation <- as.numeric(lookup_handbook(grid, latitude, longitude))
+  situation <- as.numeric(lookup_situation(grid, latitude, longitude))
   # next move that will be performed according to the handbook
   next_move <- individual[situation,]$Move
 
@@ -229,9 +225,11 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, sco
     score <- score - 1
   }
   }
+
   return(data.frame(latitude, longitude, score))
 }
 
+move_score(first_population[[5]], grid, steps = 100, score = 0) # This function takes 0.08 sec
 
 life <- function(population, steps, repetitions, grid_size, n_evidence){
   scores <- matrix(0, nrow = length(population), ncol = repetitions)
