@@ -32,6 +32,11 @@ create_population <- function(individuals){
     stop ("argument 'individuals' must be numeric") # individuals has to be numeric
   }
 
+  if(individuals <= 5){
+    stop ("The genepool of your population is too small.
+          The population needs to have more than five individuals")
+  }
+
 solutions_population <- list()
 
 # There are five different sites each with three possibles types of content
@@ -154,7 +159,6 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, sco
   situation <- as.numeric(lookup_handbook(grid, latitude, longitude))
   # next move that will be performed according to the handbook
   next_move <- individual[situation,]$Move
-  print(next_move)
 
   # needed for the moving and scoring:
   # coordintes of the current field and north east south and west
@@ -234,8 +238,8 @@ life <- function(population, steps, repetitions, grid_size, n_evidence){
 return(scores)
 }
 
-all_scores <- life(first_population, 50, 30, grid_size = c(10, 10), n_evidence = 11)
-
+all_scores <- life(first_population, 50, 30, grid_size = c(10, 10),
+                   n_evidence = 11)
 
 evolve <- function(population, all_scores){
   mean_scores <- apply(all_scores, 1, mean)
@@ -268,8 +272,24 @@ evolve <- function(population, all_scores){
   }
 
   }
-  mean_population <- mean(mean_scores)
-  return(new_population, mean_population)
+  return(new_population)
 }
 
 
+evolution <- function(population_size, grid_size, n_evidence, steps, repetitions, generations){
+  # create first population
+  population <- create_population(population_size)
+  mean_population <- numeric(5)
+  for(i in 1:generations){
+  # create grid
+  grid <- create_grid(grid_size, n_evidence)
+  # let this population walk in one grid for x steps then change the grid
+  # repeat this procedure for y repetitions
+  all_scores <- life(population, steps, repetitions, grid_size, n_evidence)
+  mean_scores <- apply(all_scores, 1, mean)
+  mean_population[i] <- mean(mean_scores)
+  # chose the two best strategies and recombine them with mutations to a new population
+  population <- evolve(population, all_scores)
+  }
+  return(mean_population)
+}
