@@ -154,6 +154,7 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, sco
   situation <- as.numeric(lookup_handbook(grid, latitude, longitude))
   # next move that will be performed according to the handbook
   next_move <- individual[situation,]$Move
+  print(next_move)
 
   # needed for the moving and scoring:
   # coordintes of the current field and north east south and west
@@ -180,7 +181,7 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, sco
     longitude <- longitude
   } else if (next_move == "West" & content_west != "Wall"){
     latitude <- latitude
-    longitude <- longitude + 1
+    longitude <- longitude - 1
 
     # if he moves into a wall he bounces back to his old position and is fined 5 points
   } else  if (next_move == "North" & content_north == "Wall"){
