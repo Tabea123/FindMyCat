@@ -22,6 +22,8 @@ devtools::use_package("gtools")
 #' @examples
 create_population <- function(individuals){
 
+  start.t <- Sys.time()
+
   # funktioniert nicht :(
   if (!requireNamespace("gtools", quietly = TRUE)) {
     stop("Package \"gtools\" needed for this function to work. Please install it.",
@@ -63,8 +65,12 @@ for (j in 1:individuals){
   # creating a dataframe with all 200 individuals
   solutions_population[[j]] <- individual_solution
 }
-return(solutions_population)
+end.t <- Sys.time()
+timetaken <- end.t - start.t
+return(timetaken)
 }
+create_population(individuals = 20)
+
 
 first_population <- create_population(individuals = 20)
 
