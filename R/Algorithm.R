@@ -7,19 +7,23 @@
 # packages that are required
 devtools::use_package("gtools")
 
-## Create the first population with random movements
-# Creating a population of x individuals with y moves
-# A population that contains x individual solutions
-
-
-#' Creating a population of x individuals
+#' Creating A Population
 #'
-#' @param individuals
+#' \code{create_poulation} creates a population of x individual solutions.
+#' The robot can look at 5 sites: the current field and the fields north, east,
+#' south, and west of him. Each of the sites can contain a wall, evidence or nothing.
+#' Following, the robot can be in 243 possible situations.
+#' For each individual strategy table is created: 243 moves are randomly sampled
+#' and assigned to each of the situations.
+#'
+#'
+#' @param individuals a number
 #'
 #' @return
-#' @export
+#' @export population a list containing a population of x data.frames of solutions
 #'
 #' @examples
+#' create_population(100)
 create_population <- function(individuals){
 
   # funktioniert nicht :(
@@ -37,7 +41,7 @@ create_population <- function(individuals){
           The population needs to have more than five individuals")
   }
 
-solutions_population <- list()
+population <- list()
 
 # There are five different sites each with three possibles types of content
 sites <- c("Current", "North", "East", "South", "West")
@@ -61,15 +65,32 @@ for (j in 1:individuals){
   individual_solution <- data.frame(situations, Move)
 
   # creating a dataframe with all 200 individuals
-  solutions_population[[j]] <- individual_solution
+  population[[j]] <- individual_solution
 }
-return(solutions_population)
+return(population)
 }
 
 first_population <- create_population(individuals = 20) # this functopn takes 0.007 secs
 
 ## Create the grid
 # maybe delete n_evidence
+
+#' Creat A Grid
+#'
+#' \code{create_grid} creates a grid. The user can specify how big the grid is and
+#' how much evidence will be placed in the grid. There is a wall around the grid
+#' (first row, first column, last row, last column)
+#'
+#'
+#' @param grid_size a numeric vector of the form c(max of x-axis, max of y-axis)
+#' which gives the size of the grid in x and y direction.
+#' @param n_evidence a numeric specifing the number of evidence in the grid.
+#'
+#' @return a matrix containing a grid
+#' @export
+#'
+#' @examples
+#' create_grid(grid_size = c(10, 10), n_evidence = 5)
 create_grid <- function(grid_size, n_evidence){
 
   if(!any(is.numeric(grid_size))){
