@@ -70,9 +70,8 @@ for (j in 1:individuals){
 return(population)
 }
 
-first_population <- create_population(individuals = 20) # this functopn takes 0.007 secs
+first_population <- create_population(individuals = 20) # this function takes 0.007 secs
 
-## Create the grid
 # maybe delete n_evidence
 
 #' Creat A Grid
@@ -128,8 +127,26 @@ return(grid)
 grid <- create_grid(grid_size = c(10, 10), n_evidence = 11) # this function takes 0.001 secs
 
 
-#' A function that retrieves the number in the handbook of the current situation
+# A function that retrieves the number in the handbook of the current situation
 
+#' Retrieve the Number of the Current Situation
+#'
+#' \code{lookup_situation} looks up the robots current situation in his strategy table.
+#'
+#' @param grid a matrix.
+#' @param latitude a number indicating the current position of the robot on the y-axis.
+#' @param longitude a number indicating the current position of the robot on the xaxis.
+#'
+#' @details From wherever the robot is, he can see the content of one adjacent site
+#' in the north, south, east, and west, as well as the content of the site he occupies.
+#' To decide what to do next, the robot looks up his current situation in his strategytable.
+#' There he finds the corresponding action.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' lookup_situation(grid, latitude = 9, longitude = 5)
 lookup_situation <- function(grid, latitude = 2, longitude = 2){
 
   if(length(latitude) != 1){
