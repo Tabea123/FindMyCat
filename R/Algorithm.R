@@ -111,12 +111,12 @@ lookup_handbook <- function(grid, latitude = 2, longitude = 2){
   if(length(longitude) != 1){
     stop ("Give the current position of the robot on the x-axis.")
   }
-  # if(longitude <= 1 || longitude >= ncol(grid)){
-  #   stop ("The current position of the robot can't be outside the grid or on a wall.")
-  # }
-  # if(latitude <= 1 || latitude >= nrow(grid)){
-  #   stop ("The current position of the robot can't be outside the grid or on a wall.")
-  # }
+  if(longitude <= 1 || longitude >= ncol(grid)){
+    stop ("The current position of the robot can't be outside the grid or on a wall.")
+  }
+  if(latitude <= 1 || latitude >= nrow(grid)){
+    stop ("The current position of the robot can't be outside the grid or on a wall.")
+  }
   if(class(longitude) != "numeric"){
     stop ("Coordinates have to be numeric.")
   }
@@ -144,7 +144,6 @@ lookup_handbook <- function(grid, latitude = 2, longitude = 2){
   return(number)
 }
 
-# for some reason there is movement outside the grid or on the walls
 
 # roxgen is missing
 # create a function that moves the robot through the grid according to his handbook
@@ -243,17 +242,33 @@ evolve <- function(population, all_scores){
   best_scores <- which(mean_scores == sort(mean_scores, decreasing = TRUE)[1] |
           mean_scores == sort(mean_scores, decreasing = TRUE)[2])
 
-  parent1 <- first_population[[best_scores[1]]]
-  parent2 <- first_population[[best_scores[2]]]
+  parent1 <- population[[best_scores[1]]]
+  parent2 <- population[[best_scores[2]]]
 
   new_population <- list()
-  for(i in 1:length(first_population)){
-  k <- sample(1:nrow(parent1), 1)
-  df1 <- parent1[1:k,]
-  df2 <- parent2[(k+1):nrow(parent2),]
-  dat <- rbind(df1, df2)
-  new_population[[i]] <- dat
-}
+  for(i in 1:length(population)){
+
+  # recombination of parental genetic material at a random section
+  genetic_recombination <- sample(1:nrow(parent1), 1)
+  genetic_material1 <- parent1[1:genetic_recombination,]
+  genetic_material2 <- parent2[(genetic_recombination+1):nrow(parent2),]
+  new_population[[i]] <- rbind(genetic_material1, genetic_material2)
+
+  # mutation
+  mutation <- sample(1:nrow(parent1), 1)
+  moves1 <- c("North", "East", "South", "West", "Stay")
+  moves2 <- c("North", "East", "South", "West", "Stay", "Pick-Up")
+
+  if(mutation == 1){
+  # stay can't be the first move
+  new_population[[i]][mutation,]$Move <- sample(moves1, 1)
+  } else {
+  new_population[[i]][mutation,]$Move <- sample(moves2, 1)
+  }
+
+  }
+  mean_population <- mean(mean_scores)
+  return(new_population, mean_population)
 }
 
 
