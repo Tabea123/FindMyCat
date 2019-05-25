@@ -318,16 +318,16 @@ move_score(first_population[[5]], grid, steps = 100, score = 0) # This function 
 
 #' One Life Cycle of a Population
 #'
-#' #' \code{life} is used to
+#' \code{life} is used to simulate one life cycle of a population.
 #'
-#' @usage life(population, grid_size, n_evidence, steps, repetitions)
+#' @usage life(population, grid_size, n_evidence, steps, sessions)
 #'
 #' @param population a list containing a population made with \code{create_population}
 #' @param grid_size a numeric vector of the form c(max of x-axis, max of y-axis)
 #' which gives the size of the grid in x and y direction.
 #' @param n_evidence a number specifing the amount of evidence in the grid
 #' @param steps a number indicating how many moves the robot should walk in the grid
-#' @param repetitions a number indicating how many sessions one
+#' @param sessions a number indicating how many sessions one
 #'
 #' @details The fitness of an individual strategy is determined by seeing how well
 #' the strategy works in X different sessions.
@@ -335,7 +335,7 @@ move_score(first_population[[5]], grid, steps = 100, score = 0) # This function 
 #' In one session, the robot walks X steps in a grid and is scored on his actions.
 #' A new session is initiated with changing the configuration of the grid. Consequently,
 #' the robot walks again and is scored. The number of sessions is indicated by
-#' the user with the argument \code{repetitions}.
+#' the user with the argument \code{sessions}.
 #'
 #' This procedure is done for every individual strategy in the population.
 #'
@@ -343,15 +343,15 @@ move_score(first_population[[5]], grid, steps = 100, score = 0) # This function 
 #' @export
 #'
 #' @examples
-#' life(population = first_population, grid_size = c(10, 10), steps = 100, repetitions = 200)
-life <- function(population, grid_size, n_evidence, steps, repetitions){
-  scores <- matrix(0, nrow = length(population), ncol = repetitions)
+#' life(population = first_population, grid_size = c(10, 10), steps = 100, sessions = 200)
+life <- function(population, grid_size, n_evidence, steps, sessions){
+  scores <- matrix(0, nrow = length(population), ncol = sessions)
 
   # loops over all strategy individuals
   # repeats move_score and change of grid as many times as indicates by the user
-  # with repetitions
+  # with sessions
   for(i in 1:length(population)){
-    for(j in 1:repetitions){
+    for(j in 1:sessions){
       scores[i,j] <- move_score(population[[i]], grid, steps = steps)$score
       grid <- create_grid(grid_size = grid_size, n_evidence = n_evidence)
     }
@@ -365,13 +365,31 @@ all_scores <- life(first_population, 50, 30, grid_size = c(10, 10),
 
 #' Evolution of the Best Strategy
 #'
-#' @param population a list containing an initial population made with \code{create_population}
-#' @param all_scores
+#' \code{evolve} is used to apply evolution to the current population of strategies
+#' to create a new population.
 #'
-#' @return
+#' @usage evolve(population, all_scores)
+#'
+#' @param population a list containing an initial population made with \code{create_population}
+#' @param all_scores a matrix containing all scores for each individual and each
+#' repetition
+#'
+#' @details Evolution works in the following way:
+#' The strategies with the two highest scores are chosen as the parent individuals.
+#' The two parents are mated to create children.
+#'
+#' A position at which to split the two parent stategies is randomly chosen.
+#' One child receives the genetic material from parent A before that position and
+#' after that position from parent B. The second child is formed vice versa.
+#' Mutation
+#' The two children are then put into the new population.
+#'
+#'
+#' @return a new population
 #' @export
 #'
 #' @examples
+#' evolve(first_population, scores)
 evolve <- function(population, all_scores){
   mean_scores <- apply(all_scores, 1, mean)
 
@@ -382,13 +400,16 @@ evolve <- function(population, all_scores){
   parent2 <- population[[best_scores[2]]]
 
   new_population <- list()
-  for(i in 1:length(population)){
+  for(i in seq(1, length(population), by = 2)){
 
   # recombination of parental genetic material at a random section
   genetic_recombination <- sample(1:nrow(parent1), 1)
   genetic_material1 <- parent1[1:genetic_recombination,]
   genetic_material2 <- parent2[(genetic_recombination+1):nrow(parent2),]
+
+  # two children are created by combining the parental genetic material
   new_population[[i]] <- rbind(genetic_material1, genetic_material2)
+  new_population[[i+1]] <- rbind(genetic_material2, genetic_material1)
 
   # mutation
   mutation <- sample(1:nrow(parent1), 1)
@@ -398,8 +419,10 @@ evolve <- function(population, all_scores){
   if(mutation == 1){
   # stay can't be the first move
   new_population[[i]][mutation,]$Move <- sample(moves1, 1)
+  new_population[[i+1]][mutation,]$Move <- sample(moves1, 1)
   } else {
   new_population[[i]][mutation,]$Move <- sample(moves2, 1)
+  new_population[[i+1]][mutation,]$Move <- sample(moves1, 1)
   }
 
   }
@@ -407,7 +430,7 @@ evolve <- function(population, all_scores){
 }
 
 
-evolution <- function(population_size, grid_size, n_evidence, steps, repetitions, generations){
+evolution <- function(population_size, grid_size, n_evidence, steps, sessions, generations){
   # create first population
   population <- create_population(population_size)
   mean_population <- numeric(5)
@@ -415,8 +438,8 @@ evolution <- function(population_size, grid_size, n_evidence, steps, repetitions
   # create grid
   grid <- create_grid(grid_size, n_evidence)
   # let this population walk in one grid for x steps then change the grid
-  # repeat this procedure for y repetitions
-  all_scores <- life(population, steps, repetitions, grid_size, n_evidence)
+  # repeat this procedure for y sessions
+  all_scores <- life(population, steps, sessions, grid_size, n_evidence)
   mean_scores <- apply(all_scores, 1, mean)
   mean_population[i] <- mean(mean_scores)
   # chose the two best strategies and recombine them with mutations to a new population
