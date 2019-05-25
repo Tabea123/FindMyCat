@@ -219,15 +219,16 @@ lookup_situation <- function(grid, latitude = 2, longitude = 2){
 #' @param steps a number indicating how many moves the robot should walk in the grid
 #' @param score a number indicating the current score of the strategy
 #'
-#' @details The robot begins at his strating position (latitude = 2, longitude = 2).
+#' @details The robot begins at his starting position (latitude = 2, longitude = 2).
 #' The robot then follows one strategy for X actions. The number of actions is
 #' indicated by the user with the argument \code{steps}. If there is no wall in the
 #' direction of his next movement, the robot walks. If his next action is to stay,
 #' the robot stops moving.
 #'
-#' The \code{score} of the strategy is the number of bonus- and minuspoints the robot accumulates in a session.
+#' The \code{score} of the strategy is the number of bonus- and minuspoints the
+#' robot accumulates in a session.
 #' If the robot is in the same site as a piece of evidence and picks it up,
-#' he gets a reward of ten points.
+#' he gets ten points.
 #' If he bends down to pick up in a site where there is no evidence, he is fined one point.
 #' If he crashes into a wall, he is fined five points and bounces back into the current site.
 #'
@@ -316,16 +317,26 @@ move_score(first_population[[5]], grid, steps = 100, score = 0) # This function 
 
 #' One Life Cycle of a Population
 #'
+#' #' \code{life} is used to
+#'
+#' @usage life(population, grid_size, n_evidence, steps, repetitions)
+#'
 #' @param population a list containing a population made with \code{create_population}
 #' @param grid_size a numeric vector of the form c(max of x-axis, max of y-axis)
 #' which gives the size of the grid in x and y direction.
 #' @param n_evidence a number specifing the amount of evidence in the grid
-#' @param steps
-#' @param repetitions
+#' @param steps a number indicating how many moves the robot should walk in the grid
+#' @param repetitions a number indicating how many sessions one
 #'
 #' @details The fitness of an individual strategy is determined by seeing how well
-#' the strategy works in X different sessions. The number of sessions is indicated
-#' by the user with the argument \code{repetitions}.
+#' the strategy works in X different sessions.
+#'
+#' In one session, the robot walks X steps in a grid and is scored on his actions.
+#' A new session is initiated with changing the configuration of the grid. Consequently,
+#' the robot walks again and is scored. The number of sessions is indicated by
+#' the user with the argument \code{repetitions}.
+#'
+#' This procedure is done for every individual strategy in the population.
 #'
 #' @return
 #' @export
@@ -334,13 +345,18 @@ move_score(first_population[[5]], grid, steps = 100, score = 0) # This function 
 #' life(population = first_population, grid_size = c(10, 10), steps = 100, repetitions = 200)
 life <- function(population, grid_size, n_evidence, steps, repetitions){
   scores <- matrix(0, nrow = length(population), ncol = repetitions)
-  for(j in 1:repetitions){
-    for(i in 1:length(population)){
+
+  # loops over all strategy individuals
+  # repeats move_score and change of grid as many times as indicates by the user
+  # with repetitions
+  for(i in 1:length(population)){
+    for(j in 1:repetitions){
       scores[i,j] <- move_score(population[[i]], grid, steps = steps)$score
     }
     grid <- create_grid(grid_size = grid_size, n_evidence = n_evidence)
   }
-return(scores)
+
+  return(scores)
 }
 
 all_scores <- life(first_population, 50, 30, grid_size = c(10, 10),
