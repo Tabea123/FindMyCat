@@ -136,7 +136,7 @@ create_population <- function(individuals){
   return(population_of_strategies)
 }
 
-first_population <- create_population(individuals = 20) # this function takes 0.007 secs
+# first_population <- create_population(individuals = 20) # this function takes 0.007 secs
 
 #' Retrieve from the Strategy Table the Number of the Current Situation
 #'
@@ -313,7 +313,7 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, sco
   return(data.frame(latitude, longitude, score))
 }
 
-move_score(first_population[[5]], grid, steps = 100, score = 0) # This function takes 0.08 sec
+# move_score(first_population[[5]], grid, steps = 100, score = 0) # This function takes 0.08 sec
 
 
 #' One Life Cycle of a Population
@@ -360,8 +360,8 @@ life <- function(population, grid_size, n_evidence, steps, sessions){
   return(scores)
 }
 
-all_scores <- life(first_population, 50, 30, grid_size = c(10, 10),
-                   n_evidence = 11)
+# all_scores <- life(first_population, 50, 30, grid_size = c(10, 10),
+#                    n_evidence = 11)
 
 #' Evolution of the Best Strategy
 #'
@@ -441,17 +441,17 @@ evolve <- function(population, all_scores){
 evolution <- function(population_size, grid_size, n_evidence, steps, sessions, generations){
   # create first population
   population <- create_population(population_size)
-  mean_population <- numeric(5)
+
   for(i in 1:generations){
   # create grid
   grid <- create_grid(grid_size, n_evidence)
+
   # let this population walk in one grid for x steps then change the grid
   # repeat this procedure for y sessions
   all_scores <- life(population, steps, sessions, grid_size, n_evidence)
-  mean_scores <- apply(all_scores, 1, mean)
-  mean_population[i] <- mean(mean_scores)
+
   # chose the two best strategies and recombine them with mutations to a new population
   population <- evolve(population, all_scores)
   }
-  return(mean_population)
+  return(population)
 }
