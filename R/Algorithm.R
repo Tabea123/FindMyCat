@@ -411,18 +411,26 @@ evolve <- function(population, all_scores){
   new_population[[i]] <- rbind(genetic_material1, genetic_material2)
   new_population[[i+1]] <- rbind(genetic_material2, genetic_material1)
 
-  # mutation
-  mutation <- sample(1:nrow(parent1), 1)
-  moves1 <- c("North", "East", "South", "West", "Stay")
+  # with a small probability movements in each child mutate
+  probability <- sample(c(TRUE, FALSE), 1, prob = c(0.2, 0.8))
+
+  if(probability == TRUE){
+  # sampling how many mutations should occur
+  n_mutations <- sample(1:5, 1)
+
+  # randomly chosing rows that will be mutated
+  mutation <- sample(1:nrow(parent1), n_mutations)
+  moves1 <- c("North", "East", "South", "West", "Pick-Up")
   moves2 <- c("North", "East", "South", "West", "Stay", "Pick-Up")
 
   if(mutation == 1){
   # stay can't be the first move
-  new_population[[i]][mutation,]$Move <- sample(moves1, 1)
-  new_population[[i+1]][mutation,]$Move <- sample(moves1, 1)
+  new_population[[i]][mutation,]$Move <- sample(moves1, length(mutation))
+  new_population[[i+1]][mutation,]$Move <- sample(moves1, length(mutation))
   } else {
-  new_population[[i]][mutation,]$Move <- sample(moves2, 1)
-  new_population[[i+1]][mutation,]$Move <- sample(moves1, 1)
+  new_population[[i]][mutation,]$Move <- sample(moves2, length(mutation))
+  new_population[[i+1]][mutation,]$Move <- sample(moves2, length(mutation))
+  }
   }
 
   }
