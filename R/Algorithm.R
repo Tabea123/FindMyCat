@@ -16,7 +16,7 @@ devtools::use_package("gtools")
 #'
 #' @param grid_size a numeric vector of the form c(max of x-axis, max of y-axis)
 #' which gives the size of the grid in x and y direction.
-#' @param n_evidence a numeric specifing the number of evidence in the grid.
+#' @param n_evidence a number specifing the amount of evidence in the grid
 #'
 #' @details The user can specify how big the grid is and how much evidence will
 #' be placed in the grid. The function first creates a grid that is completely empty.
@@ -48,23 +48,28 @@ create_grid <- function(grid_size, n_evidence){
     stop ("Number evidence has to be more than 0.")
   }
 
-# Create an empty grid and add the walls
-grid <- matrix(NA, grid_size[1], grid_size[2])
-grid[0:nrow(grid),0:ncol(grid)] <- "Empty"
-# create evidence randomly and add it to the grid
-evidence <- sample(0:grid_size[1]^2, n_evidence, replace = F)
-grid[evidence] <- "Evidence"
-grid <- rbind(grid, matrix("Wall", nrow = 1, ncol = grid_size[2]))
-grid <- rbind(matrix("Wall", nrow = 1, ncol = grid_size[2]), grid)
-grid <- cbind(grid, matrix("Wall", ncol = 1, nrow = grid_size[2]+2))
-grid <- cbind(matrix("Wall", ncol = 1, nrow = grid_size[2]+2), grid)
+  # create an empty grid
+  # the size is specified by the user
+  grid <- matrix(NA, grid_size[1], grid_size[2])
+  grid[0:nrow(grid),0:ncol(grid)] <- "Empty"
 
-return(grid)
+  # sample evidence randomly and add it to the grid
+  evidence <- sample(0:grid_size[1]^2, n_evidence, replace = F)
+  grid[evidence] <- "Evidence"
+
+  # in a last step the walls are added to the grid
+  # this is done with cbind() and rbind() to avoid overwriting evidence
+  grid <- rbind(grid, matrix("Wall", nrow = 1, ncol = grid_size[2]))
+  grid <- rbind(matrix("Wall", nrow = 1, ncol = grid_size[2]), grid)
+  grid <- cbind(grid, matrix("Wall", ncol = 1, nrow = grid_size[2]+2))
+  grid <- cbind(matrix("Wall", ncol = 1, nrow = grid_size[2]+2), grid)
+
+  return(grid)
 }
 
 grid <- create_grid(grid_size = c(10, 10), n_evidence = 11) # this function takes 0.001 secs
 
-#' Creating A Population
+#' Create A Population
 #'
 #' \code{create_poulation} A function to create the primary population of candidate strategies.
 #'
@@ -106,18 +111,24 @@ create_population <- function(individuals){
   population_of_strategies <- list()
 
   # There are five different sites each with three possibles types of content
-  sites <- c("Current", "North", "East", "South", "West")
+  sites   <- c("Current", "North", "East", "South", "West")
   content <- c("Wall", "Empty", "Evidence")
+  # There are 243 possible situations in total
   situations <- data.frame(permutations(n = length(content), r = length(sites),
                                         v = content, repeats.allowed = T))
   colnames(situations) <- sites
-  moves <- c("North", "East", "South", "West", "Stay", "Pick-Up") # an erster stelle kein stay
+
+  # In each situation, the robot can perform one of the following six actions:
+  # move north, east, south, and west, stay in one field, or pick up something.
+  moves <- c("North", "East", "South", "West", "Stay", "Pick-Up")
   Move <- character(nrow(situations))
 
   for (j in 1:individuals){
-    # generating a sequence of as much random movements as there are situations
+    # generating a sequence of 243 random movements
     Move <- sample(moves, nrow(situations), replace = T)
 
+    # the first move cannot be stay; otherwise the robot gets caught up in an endless
+    # loop and makes no minus- or bonuspoints
     if(Move[1] == "Stay"){
       first_move <- c("North", "East", "South", "West", "Pick-Up")
       Move <- sample(first_move, 1, replace = F)
@@ -143,9 +154,9 @@ first_population <- create_population(individuals = 20) # this function takes 0.
 #' @param longitude a number indicating the current position of the robot on the xaxis.
 #'
 #' @details To decide which move to perform, the robot looks up his current
-#' situation in his strategytable. There he finds the corresponding action.
+#' situation in his strategy table. There he finds the corresponding action.
 #'
-#' @return a number indicating which situation the robot is in
+#' @return a number from the robots' strategy table
 #' @export
 #'
 #' @examples
@@ -193,10 +204,13 @@ lookup_situation <- function(grid, latitude = 2, longitude = 2){
 
 # This function takes 0.0009 sec
 
-# roxgen is missing
-# create a function that moves the robot through the grid according to his handbook
 
-#' A function that Moves the Robot and Scores his Actions
+#' Move the Robot and Score his Actions
+#'
+#' \code{move_score} is used to move the robot through the grid according to his
+#' strategy table and score his actions.
+#'
+#' @usage move_score(individual, grid, latitude, longitude, steps, score)
 #'
 #' @param individual one individual strategy taken form the population made with \code{create_poulation}
 #' @param grid an object of class matrix made with \code{create_grid}
@@ -205,10 +219,23 @@ lookup_situation <- function(grid, latitude = 2, longitude = 2){
 #' @param steps a number indicating how many moves the robot should walk in the grid
 #' @param score a number indicating the current score of the strategy
 #'
-#' @return
+#' @details The robot begins at his strating position (latitude = 2, longitude = 2).
+#' The robot then follows one strategy for X actions. The number of actions is
+#' indicated by the user with the argument \code{steps}. If there is no wall in the
+#' direction of his next movement, the robot walks. If his next action is to stay,
+#' the robot stops moving.
+#'
+#' The \code{score} of the strategy is the number of bonus- and minuspoints the robot accumulates in a session.
+#' If the robot is in the same site as a piece of evidence and picks it up,
+#' he gets a reward of ten points.
+#' If he bends down to pick up in a site where there is no evidence, he is fined one point.
+#' If he crashes into a wall, he is fined five points and bounces back into the current site.
+#'
+#' @return The robots current position and the score.
 #' @export
 #'
 #' @examples
+#' move_score(population[[1]], grid = grid, latitude = 5, lonitude = 5, steps = 100, score = 0)
 move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, score = 0){
 
   for(i in 1:steps){
@@ -286,7 +313,26 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, sco
 
 move_score(first_population[[5]], grid, steps = 100, score = 0) # This function takes 0.08 sec
 
-life <- function(population, steps, repetitions, grid_size, n_evidence){
+
+#' One Life Cycle of a Population
+#'
+#' @param population a list containing a population made with \code{create_population}
+#' @param grid_size a numeric vector of the form c(max of x-axis, max of y-axis)
+#' which gives the size of the grid in x and y direction.
+#' @param n_evidence a number specifing the amount of evidence in the grid
+#' @param steps
+#' @param repetitions
+#'
+#' @details The fitness of an individual strategy is determined by seeing how well
+#' the strategy works in X different sessions. The number of sessions is indicated
+#' by the user with the argument \code{repetitions}.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' life(population = first_population, grid_size = c(10, 10), steps = 100, repetitions = 200)
+life <- function(population, grid_size, n_evidence, steps, repetitions){
   scores <- matrix(0, nrow = length(population), ncol = repetitions)
   for(j in 1:repetitions){
     for(i in 1:length(population)){
