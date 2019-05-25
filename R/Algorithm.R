@@ -127,20 +127,13 @@ create_population <- function(individuals){
     # generating a sequence of 243 random movements
     Move <- sample(moves, nrow(situations), replace = T)
 
-    # the first move cannot be stay; otherwise the robot gets caught up in an endless
-    # loop and makes no minus- or bonuspoints
-    if(Move[1] == "Stay"){
-      first_move <- c("North", "East", "South", "West", "Pick-Up")
-      Move <- sample(first_move, 1, replace = F)
-    }
-
     # storing the movements next to the situations
     individual_strategy <- data.frame(situations, Move)
 
     # creating a dataframe with all 200 individuals
     population_of_strategies[[j]] <- individual_strategy
   }
-  return(population)
+  return(population_of_strategies)
 }
 
 first_population <- create_population(individuals = 20) # this function takes 0.007 secs
@@ -244,6 +237,14 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, sco
   situation <- as.numeric(lookup_situation(grid, latitude, longitude))
   # next move that will be performed according to the handbook
   next_move <- individual[situation,]$Move
+
+  # the first move cannot be stay; otherwise the robot gets caught up in an endless
+  # loop and makes no minus- or bonuspoints
+  # this skews the fitness of this strategy, making it score better than it is
+  if(i == 1 && next_move == "Stay"){
+    first_move <- c("North", "East", "South", "West", "Pick-Up")
+    next_move <- sample(first_move, 1, replace = F)
+  }
 
   # needed for the moving and scoring:
   # coordintes of the current field and north east south and west
@@ -352,8 +353,8 @@ life <- function(population, grid_size, n_evidence, steps, repetitions){
   for(i in 1:length(population)){
     for(j in 1:repetitions){
       scores[i,j] <- move_score(population[[i]], grid, steps = steps)$score
+      grid <- create_grid(grid_size = grid_size, n_evidence = n_evidence)
     }
-    grid <- create_grid(grid_size = grid_size, n_evidence = n_evidence)
   }
 
   return(scores)
@@ -362,6 +363,15 @@ life <- function(population, grid_size, n_evidence, steps, repetitions){
 all_scores <- life(first_population, 50, 30, grid_size = c(10, 10),
                    n_evidence = 11)
 
+#' Evolution of the Best Strategy
+#'
+#' @param population a list containing an initial population made with \code{create_population}
+#' @param all_scores
+#'
+#' @return
+#' @export
+#'
+#' @examples
 evolve <- function(population, all_scores){
   mean_scores <- apply(all_scores, 1, mean)
 
