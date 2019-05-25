@@ -67,7 +67,7 @@ create_grid <- function(grid_size, n_evidence){
   return(grid)
 }
 
-grid <- create_grid(grid_size = c(10, 10), n_evidence = 11) # this function takes 0.001 secs
+# grid <- create_grid(grid_size = c(10, 10), n_evidence = 11) # this function takes 0.001 secs
 
 #' Create A Population
 #'
@@ -360,8 +360,8 @@ life <- function(population, grid_size, n_evidence, steps, sessions){
   return(scores)
 }
 
-# all_scores <- life(first_population, 50, 30, grid_size = c(10, 10),
-#                    n_evidence = 11)
+all_scores <- life(population, grid_size = c(5, 5), n_evidence = 11,
+                   steps = 10, sessions = 3)
 
 #' Evolution of the Best Strategy
 #'
@@ -423,7 +423,7 @@ evolve <- function(population, all_scores){
   moves1 <- c("North", "East", "South", "West", "Pick-Up")
   moves2 <- c("North", "East", "South", "West", "Stay", "Pick-Up")
 
-  if(mutation == 1){
+  if(any(mutation == 1)){
   # stay can't be the first move
   new_population[[i]][mutation,]$Move <- sample(moves1, length(mutation))
   new_population[[i+1]][mutation,]$Move <- sample(moves1, length(mutation))
@@ -432,26 +432,122 @@ evolve <- function(population, all_scores){
   new_population[[i+1]][mutation,]$Move <- sample(moves2, length(mutation))
   }
   }
-
+  # changing the row numbers
+  rownames(new_population[[i]]) <- 1:nrow(new_population[[i]])
+  rownames(new_population[[i+1]]) <- 1:nrow(new_population[[i+1]])
   }
   return(new_population)
 }
 
 
 evolution <- function(population_size, grid_size, n_evidence, steps, sessions, generations){
+
+  # create first grid
+  grid <- create_grid(grid_size = grid_size, n_evidence = n_evidence)
+
   # create first population
   population <- create_population(population_size)
 
   for(i in 1:generations){
-  # create grid
-  grid <- create_grid(grid_size, n_evidence)
 
   # let this population walk in one grid for x steps then change the grid
   # repeat this procedure for y sessions
-  all_scores <- life(population, steps, sessions, grid_size, n_evidence)
+  all_scores <- life(population, steps, sessions, grid_size = grid_size, n_evidence)
 
   # chose the two best strategies and recombine them with mutations to a new population
   population <- evolve(population, all_scores)
   }
   return(population)
+}
+
+last_population <- evolution(population_size = 10, grid_size = c(5, 5),
+                             n_evidence = 10, steps = 10, sessions = 5, generations = 3)
+
+
+### EXPERIMENT
+all_scores <- life(last_population, grid_size = c(5, 5), n_evidence = 10, steps = 10,
+                   sessions = 5)
+
+x <- which.max(apply(all_scores, 1, mean))
+
+individual <- last_population[x]
+
+reveal_path <- function(individual, grid, latitude = 2, longitude = 2, steps){
+
+  df_latitude <- numeric(steps)
+  df_longitude <- numeric(steps)
+
+  for(i in 1:steps){
+    # current situation the robot finds itself in
+    situation <- as.numeric(lookup_situation(grid, latitude, longitude))
+    # next move that will be performed according to the handbook
+    next_move <- individual[situation,]$Move
+
+    # needed for the moving and scoring:
+    # coordintes of the current field and north east south and west
+    yaxis <- c(latitude, latitude - 1, latitude, latitude + 1, latitude)
+    xaxis <- c(longitude, longitude, longitude + 1, longitude, longitude - 1)
+    # content on the current field and the fields around the robot
+    content_current <- grid[yaxis[1], xaxis[1]]
+    content_north <- grid[yaxis[2], xaxis[2]]
+    content_east <- grid[yaxis[3], xaxis[3]]
+    content_south <- grid[yaxis[4], xaxis[4]]
+    content_west <- grid[yaxis[5], xaxis[5]]
+
+
+    # change of the current position of the robot according to the move that
+    # corresponds to his current position
+    if (next_move == "North" & content_north != "Wall"){
+      latitude  <- latitude - 1
+      longitude <- longitude
+    } else if (next_move == "East" & content_east != "Wall"){
+      latitude <- latitude
+      longitude <- longitude + 1
+    } else if (next_move == "South" & content_south != "Wall"){
+      latitude <- latitude + 1
+      longitude <- longitude
+    } else if (next_move == "West" & content_west != "Wall"){
+      latitude <- latitude
+      longitude <- longitude - 1
+
+      # if he moves into a wall he bounces back to his old position and is fined 5 points
+    } else  if (next_move == "North" & content_north == "Wall"){
+      latitude <- latitude
+      longitude <- longitude
+
+    } else if (next_move == "East" & content_east == "Wall"){
+      latitude <- latitude
+      longitude <- longitude
+
+    } else if (next_move == "South" & content_south == "Wall"){
+      latitude <- latitude
+      longitude <- longitude
+
+    } else if(next_move == "West" & content_west == "Wall"){
+      latitude <- latitude
+      longitude <- longitude
+
+
+      # if he picks-up his location doesnt change
+    } else if (next_move == "Stay"){
+      latitude <- latitude
+      longitude <- longitude
+
+      # if he picks up sth his location doesnt change but the environment changes
+    } else if(next_move == "Pick-Up" & content_current == "Evidence"){
+      latitude <- latitude
+      longitude <- longitude
+      grid[xaxis[1], yaxis[1]] <- "Empty"
+
+      # if he picks up but there is nothing, he is fined
+    } else if(next_move == "Pick-Up" & content_current == "Empty"){
+      latitude <- latitude
+      longitude <- longitude
+
+    }
+    df_latitude[i] <- latitude
+    df_longitude[i] <- longitude
+  }
+
+  return(data.frame(df_latitude, df_longitude))
 }
