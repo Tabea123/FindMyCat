@@ -142,6 +142,7 @@ create_population <- function(individuals){
 #'
 #' \code{lookup_situation} looks up the robots current situation in his strategy table.
 #'
+#' @param individual one individual strategy taken form the population made with \code{create_poulation}
 #' @param grid a matrix.
 #' @param latitude a number indicating the current position of the robot on the y-axis.
 #' @param longitude a number indicating the current position of the robot on the xaxis.
@@ -153,8 +154,8 @@ create_population <- function(individuals){
 #' @export
 #'
 #' @examples
-#' lookup_situation(grid, latitude = 9, longitude = 5)
-lookup_situation <- function(grid, latitude = 2, longitude = 2){
+#' lookup_situation(individual, grid, latitude = 9, longitude = 5)
+lookup_situation <- function(individual, grid, latitude = 2, longitude = 2){
 
   if(length(latitude) != 1){
     stop ("Give the current position of the robot on the y-axis.")
@@ -162,12 +163,12 @@ lookup_situation <- function(grid, latitude = 2, longitude = 2){
   if(length(longitude) != 1){
     stop ("Give the current position of the robot on the x-axis.")
   }
-  # if(longitude <= 1 || longitude >= ncol(grid)){
-  #   stop ("The current position of the robot can't be outside the grid or on a wall.")
-  # }
-  # if(latitude <= 1 || latitude >= nrow(grid)){
-  #   stop ("The current position of the robot can't be outside the grid or on a wall.")
-  # }
+  if(longitude <= 1 || longitude >= ncol(grid)){
+    stop ("The current position of the robot can't be outside the grid or on a wall.")
+  }
+  if(latitude <= 1 || latitude >= nrow(grid)){
+    stop ("The current position of the robot can't be outside the grid or on a wall.")
+  }
   if(class(longitude) != "numeric"){
     stop ("Coordinates have to be numeric.")
   }
@@ -175,17 +176,19 @@ lookup_situation <- function(grid, latitude = 2, longitude = 2){
     stop ("Coordinates have to be numeric.")
   }
 
-  # There are five different sites each with three possibles types of content
-  sites <- c("Current", "North", "East", "South", "West")
-  content <- c("Wall", "Empty", "Evidence")
-  situation <- data.frame(permutations(n = length(content), r = length(sites),
-                                        v = content, repeats.allowed = T))
+  # # There are five different sites each with three possibles types of content
+  # sites <- c("Current", "North", "East", "South", "West")
+  # content <- c("Wall", "Empty", "Evidence")
+  # situation <- data.frame(permutations(n = length(content), r = length(sites),
+  #                                       v = content, repeats.allowed = T))
+  situation <- individual[,1:5]
+
 
   # coordintes of the current field and north east south and west
   yaxis <- c(latitude, latitude - 1, latitude, latitude + 1, latitude)
   xaxis <- c(longitude, longitude, longitude + 1, longitude, longitude - 1)
 
-  # looking up which number in the handbook corresponds to the current situation
+  # looking up which number in the strategy table corresponds to the current situation
   number <- which(situation[,1] == grid[yaxis[1], xaxis[1]] &
           situation[,2] == grid[yaxis[2], xaxis[2]] &
           situation[,3] == grid[yaxis[3], xaxis[3]] &
@@ -229,12 +232,12 @@ lookup_situation <- function(grid, latitude = 2, longitude = 2){
 #' @export
 #'
 #' @examples
-#' move_score(population[[1]], grid = grid, latitude = 5, lonitude = 5, steps = 100, score = 0)
+#' move_score(population[[1]], grid = grid, latitude = 5, longitude = 5, steps = 100, score = 0)
 move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, score = 0){
 
   for(i in 1:steps){
   # current situation the robot finds itself in
-  situation <- as.numeric(lookup_situation(grid, latitude, longitude))
+  situation <- as.numeric(lookup_situation(individual, grid, latitude, longitude))
   # next move that will be performed according to the handbook
   next_move <- individual[situation,]$Move
 
@@ -244,9 +247,8 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, sco
   if(i == 1 && next_move == "Stay"){
     first_move <- c("North", "East", "South", "West", "Pick-Up")
     next_move[i] <- sample(first_move, 1, replace = F)
+    individual[situation,]$Move <- next_move[i]
   }
-
-  print(next_move)
 
   # needed for the moving and scoring:
   # coordintes of the current field and north east south and west
@@ -479,7 +481,7 @@ reveal_path <- function(individual, grid, latitude = 2, longitude = 2, steps){
 
   for(i in 1:steps){
     # current situation the robot finds itself in
-    situation <- as.numeric(lookup_situation(grid, latitude, longitude))
+    situation <- as.numeric(lookup_situation(individual, grid, latitude, longitude))
     # next move that will be performed according to the handbook
     next_move <- individual[situation,]$Move
 
@@ -545,8 +547,8 @@ reveal_path <- function(individual, grid, latitude = 2, longitude = 2, steps){
       longitude <- longitude
 
     }
-    df_latitude[i] <- latitude
-    df_longitude[i] <- longitude
+    df_latitude[i+1] <- latitude
+    df_longitude[i+1] <- longitude
   }
 
   return(data.frame(df_latitude, df_longitude))
