@@ -243,8 +243,10 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, sco
   # this skews the fitness of this strategy, making it score better than it is
   if(i == 1 && next_move == "Stay"){
     first_move <- c("North", "East", "South", "West", "Pick-Up")
-    next_move <- sample(first_move, 1, replace = F)
+    next_move[i] <- sample(first_move, 1, replace = F)
   }
+
+  print(next_move)
 
   # needed for the moving and scoring:
   # coordintes of the current field and north east south and west
