@@ -162,12 +162,12 @@ lookup_situation <- function(grid, latitude = 2, longitude = 2){
   if(length(longitude) != 1){
     stop ("Give the current position of the robot on the x-axis.")
   }
-  if(longitude <= 1 || longitude >= ncol(grid)){
-    stop ("The current position of the robot can't be outside the grid or on a wall.")
-  }
-  if(latitude <= 1 || latitude >= nrow(grid)){
-    stop ("The current position of the robot can't be outside the grid or on a wall.")
-  }
+  # if(longitude <= 1 || longitude >= ncol(grid)){
+  #   stop ("The current position of the robot can't be outside the grid or on a wall.")
+  # }
+  # if(latitude <= 1 || latitude >= nrow(grid)){
+  #   stop ("The current position of the robot can't be outside the grid or on a wall.")
+  # }
   if(class(longitude) != "numeric"){
     stop ("Coordinates have to be numeric.")
   }
@@ -346,6 +346,7 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, sco
 #' life(population = first_population, grid_size = c(10, 10), steps = 100, sessions = 200)
 life <- function(population, grid_size, n_evidence, steps, sessions){
   scores <- matrix(0, nrow = length(population), ncol = sessions)
+  grid <- create_grid(grid_size, n_evidence )
 
   # loops over all strategy individuals
   # repeats move_score and change of grid as many times as indicates by the user
@@ -353,15 +354,12 @@ life <- function(population, grid_size, n_evidence, steps, sessions){
   for(i in 1:length(population)){
     for(j in 1:sessions){
       scores[i,j] <- move_score(population[[i]], grid, steps = steps)$score
-      grid <- create_grid(grid_size = grid_size, n_evidence = n_evidence)
+      grid <- create_grid(grid_size, n_evidence)
     }
   }
 
   return(scores)
 }
-
-all_scores <- life(population, grid_size = c(5, 5), n_evidence = 11,
-                   steps = 10, sessions = 3)
 
 #' Evolution of the Best Strategy
 #'
@@ -460,17 +458,17 @@ evolution <- function(population_size, grid_size, n_evidence, steps, sessions, g
   return(population)
 }
 
-last_population <- evolution(population_size = 10, grid_size = c(5, 5),
-                             n_evidence = 10, steps = 10, sessions = 5, generations = 3)
+last_population <- evolution(population_size = 50, grid_size = c(5, 5),
+                             n_evidence = 10, steps = 20, sessions = 8, generations = 5)
 
 
 ### EXPERIMENT
-all_scores <- life(last_population, grid_size = c(5, 5), n_evidence = 10, steps = 10,
-                   sessions = 5)
+all_scores <- life(last_population, grid_size = c(5, 5), n_evidence = 10, steps = 20,
+                   sessions = 8)
 
 x <- which.max(apply(all_scores, 1, mean))
 
-individual <- last_population[x]
+individual <- last_population[[x]]
 
 reveal_path <- function(individual, grid, latitude = 2, longitude = 2, steps){
 
