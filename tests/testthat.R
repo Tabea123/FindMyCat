@@ -61,4 +61,9 @@ test_that("stop messages occur correctly", {
   expect_error(lookup_situation(individual, grid, latitude = c(7, 8, 7, 9, 7), longitude = 3))
 })
 
-
+test_that("create_population returns a number; the number will be used to index", {
+  grid <- create_grid(c(5, 5), 5)
+  individual <- create_population(10)[[10]]
+  model <- lookup_situation(individual, grid, latitude = 4, longitude = 3)
+  expect_is(model, "numeric")
+})
