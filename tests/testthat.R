@@ -67,3 +67,11 @@ test_that("create_population returns a number; the number will be used to index"
   model <- lookup_situation(individual, grid, latitude = 4, longitude = 3)
   expect_is(model, "numeric")
 })
+
+
+# function move_score
+test_that("score cannot be over max score", {
+  grid <- create_grid(c(5, 5), 5)
+  individual <- create_population(10)[[10]]
+  expect_less_than(move_score(individual, grid, steps = 200, score = 0)$score, 50)
+})
