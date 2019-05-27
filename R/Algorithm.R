@@ -39,6 +39,10 @@ create_grid <- function(grid_size, n_evidence){
     stop ("Give the length of the grid on the y-axis and x-axis")
   }
 
+  if(grid_size[1] !=  grid_size[2]){
+    stop ("The grid has to be quadratic.")
+  }
+
   if(is.numeric(n_evidence) == FALSE){
     # number of evidence have to be numeric
     stop ("Indicate how much evidence (numeric) you want to place in the grid.")
@@ -46,6 +50,10 @@ create_grid <- function(grid_size, n_evidence){
 
   if(n_evidence <= 0){
     stop ("Number evidence has to be more than 0.")
+  }
+
+  if(n_evidence > grid_size[1]*grid_size[2]){
+    stop ("There can not be more evidence than fields in the grid.")
   }
 
   # create an empty grid
@@ -136,7 +144,7 @@ create_population <- function(individuals){
   return(population_of_strategies)
 }
 
-# first_population <- create_population(individuals = 20) # this function takes 0.007 secs
+population <- create_population(50)
 
 #' Retrieve from the Strategy Table the Number of the Current Situation
 #'
@@ -157,6 +165,14 @@ create_population <- function(individuals){
 #' lookup_situation(individual, grid, latitude = 9, longitude = 5)
 lookup_situation <- function(individual, grid, latitude = 2, longitude = 2){
 
+  if(class(individual) != "data.frame"){
+    stop ("Provide a data.frame containing the individual strategy table.")
+  }
+
+  if(class(grid) != "matrix"){
+    stop ("Provide a matrix containing the grid.")
+  }
+
   if(length(latitude) != 1){
     stop ("Give the current position of the robot on the y-axis.")
   }
@@ -176,13 +192,8 @@ lookup_situation <- function(individual, grid, latitude = 2, longitude = 2){
     stop ("Coordinates have to be numeric.")
   }
 
-  # # There are five different sites each with three possibles types of content
-  # sites <- c("Current", "North", "East", "South", "West")
-  # content <- c("Wall", "Empty", "Evidence")
-  # situation <- data.frame(permutations(n = length(content), r = length(sites),
-  #                                       v = content, repeats.allowed = T))
+  # extracting the possible situation from the individual strategy table
   situation <- individual[,1:5]
-
 
   # coordintes of the current field and north east south and west
   yaxis <- c(latitude, latitude - 1, latitude, latitude + 1, latitude)
@@ -195,7 +206,7 @@ lookup_situation <- function(individual, grid, latitude = 2, longitude = 2){
           situation[,4] == grid[yaxis[4], xaxis[4]] &
           situation[,5] == grid[yaxis[5], xaxis[5]])
 
-  return(number)
+  return(as.numeric(number))
 }
 
 # This function takes 0.0009 sec
@@ -235,20 +246,29 @@ lookup_situation <- function(individual, grid, latitude = 2, longitude = 2){
 #' move_score(population[[1]], grid = grid, latitude = 5, longitude = 5, steps = 100, score = 0)
 move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, score = 0){
 
+  if(class(individual) != "data.frame"){
+    stop ("Provide a data.frame containing the individual strategy table.")
+  }
+
   for(i in 1:steps){
+  next_move <- NULL
   # current situation the robot finds itself in
-  situation <- as.numeric(lookup_situation(individual, grid, latitude, longitude))
+  situation <- lookup_situation(individual, grid, latitude, longitude)
+  print(situation)
   # next move that will be performed according to the handbook
-  next_move <- individual[situation,]$Move
+  next_move <- as.character(individual[situation,]$Move)
+
+
 
   # the first move cannot be stay; otherwise the robot gets caught up in an endless
   # loop and makes no minus- or bonuspoints
   # this skews the fitness of this strategy, making it score better than it is
-  if(i == 1 && next_move == "Stay"){
+  if(i == 1 & next_move == "Stay"){
     first_move <- c("North", "East", "South", "West", "Pick-Up")
-    next_move[i] <- sample(first_move, 1, replace = F)
-    individual[situation,]$Move <- next_move[i]
+    next_move <- sample(first_move, 1, replace = F)
+    individual[situation,]$Move <- next_move
   }
+
 
   # needed for the moving and scoring:
   # coordintes of the current field and north east south and west
@@ -317,7 +337,6 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, sco
   return(data.frame(latitude, longitude, score))
 }
 
-# move_score(first_population[[5]], grid, steps = 100, score = 0) # This function takes 0.08 sec
 
 
 #' One Life Cycle of a Population
@@ -343,7 +362,7 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, sco
 #'
 #' This procedure is done for every individual strategy in the population.
 #'
-#' @return
+#' @return The score for each individual strategy in each session.
 #' @export
 #'
 #' @examples
@@ -355,9 +374,9 @@ life <- function(population, grid_size, n_evidence, steps, sessions){
   # loops over all strategy individuals
   # repeats move_score and change of grid as many times as indicates by the user
   # with sessions
-  for(i in 1:length(population)){
-    for(j in 1:sessions){
-      scores[i,j] <- move_score(population[[i]], grid, steps = steps)$score
+  for(j in 1:sessions){
+  for(k in 1:length(population)){
+      scores[k,j] <- move_score(population[[k]], grid, steps = steps)$score
       grid <- create_grid(grid_size, n_evidence)
     }
   }
@@ -398,20 +417,21 @@ evolve <- function(population, all_scores){
   best_scores <- which(mean_scores == sort(mean_scores, decreasing = TRUE)[1] |
           mean_scores == sort(mean_scores, decreasing = TRUE)[2])
 
+  # chose the two individuals with the best scores as the parents of the new population
   parent1 <- population[[best_scores[1]]]
   parent2 <- population[[best_scores[2]]]
 
+
   new_population <- list()
-  for(i in seq(1, length(population), by = 2)){
+  for(i in 1:length(population)){
 
-  # recombination of parental genetic material at a random section
-  genetic_recombination <- sample(1:nrow(parent1), 1)
-  genetic_material1 <- parent1[1:genetic_recombination,]
-  genetic_material2 <- parent2[(genetic_recombination+1):nrow(parent2),]
+    # recombination of parental genetic material at a random section
+    genetic_recombination <- sample(1:nrow(parent1), 1)
+    genetic_material1 <- parent1[1:genetic_recombination,]
+    genetic_material2 <- parent2[(genetic_recombination+1):nrow(parent2),]
 
-  # two children are created by combining the parental genetic material
-  new_population[[i]] <- rbind(genetic_material1, genetic_material2)
-  new_population[[i+1]] <- rbind(genetic_material2, genetic_material1)
+     # two children are created by combining the parental genetic material
+    new_population[[i]] <- rbind(genetic_material1, genetic_material2)
 
   # with a small probability movements in each child mutate
   probability <- sample(c(TRUE, FALSE), 1, prob = c(0.2, 0.8))
@@ -422,134 +442,128 @@ evolve <- function(population, all_scores){
 
   # randomly chosing rows that will be mutated
   mutation <- sample(1:nrow(parent1), n_mutations)
-  moves1 <- c("North", "East", "South", "West", "Pick-Up")
+  #moves1 <- c("North", "East", "South", "West", "Pick-Up")
   moves2 <- c("North", "East", "South", "West", "Stay", "Pick-Up")
 
-  if(any(mutation == 1)){
-  # stay can't be the first move
-  new_population[[i]][mutation,]$Move <- sample(moves1, length(mutation))
-  new_population[[i+1]][mutation,]$Move <- sample(moves1, length(mutation))
-  } else {
+  # if(any(mutation == 1)){
+  # # stay can't be the first move
+  # new_population[[i]][mutation,]$Move <- sample(moves1, length(mutation))
+  # } else {
   new_population[[i]][mutation,]$Move <- sample(moves2, length(mutation))
-  new_population[[i+1]][mutation,]$Move <- sample(moves2, length(mutation))
-  }
+  # }
   }
   # changing the row numbers
   rownames(new_population[[i]]) <- 1:nrow(new_population[[i]])
-  rownames(new_population[[i+1]]) <- 1:nrow(new_population[[i+1]])
   }
   return(new_population)
 }
 
-
+# This function is supposed to call all other functions
+# but it doesn't work
 evolution <- function(population_size, grid_size, n_evidence, steps, sessions, generations){
 
   # create first grid
-  grid <- create_grid(grid_size = grid_size, n_evidence = n_evidence)
+  grid <- create_grid(grid_size, n_evidence)
 
   # create first population
   population <- create_population(population_size)
 
   for(i in 1:generations){
 
-  # let this population walk in one grid for x steps then change the grid
-  # repeat this procedure for y sessions
-  all_scores <- life(population, steps, sessions, grid_size = grid_size, n_evidence)
+    # let this population walk in one grid for x steps then change the grid
+    # repeat this procedure for y sessions
+    all_scores <- life(population, grid_size, n_evidence, steps, sessions)
 
-  # chose the two best strategies and recombine them with mutations to a new population
-  population <- evolve(population, all_scores)
+    # chose the two best strategies and recombine them with mutations to a new population
+    population <- evolve(population, all_scores)
   }
+
   return(population)
 }
 
 last_population <- evolution(population_size = 50, grid_size = c(5, 5),
                              n_evidence = 10, steps = 20, sessions = 8, generations = 5)
 
-
-### EXPERIMENT
-all_scores <- life(last_population, grid_size = c(5, 5), n_evidence = 10, steps = 20,
-                   sessions = 8)
+all_scores <- life(last_population, grid_size = c(5, 5), n_evidence = 10, steps = 20, sessions = 8)
 
 x <- which.max(apply(all_scores, 1, mean))
-
 individual <- last_population[[x]]
+steps <- 30
 
-reveal_path <- function(individual, grid, latitude = 2, longitude = 2, steps){
+latitude <- numeric(30)
+latitude[1] <- 2
+longitude <- numeric(30)
+longitude[1] <- 2
 
-  df_latitude <- numeric(steps)
-  df_longitude <- numeric(steps)
+grid <- create_grid(c(5, 5), 10)
 
-  for(i in 1:steps){
-    # current situation the robot finds itself in
-    situation <- as.numeric(lookup_situation(individual, grid, latitude, longitude))
-    # next move that will be performed according to the handbook
-    next_move <- individual[situation,]$Move
+for(i in 2:steps){
 
-    # needed for the moving and scoring:
-    # coordintes of the current field and north east south and west
-    yaxis <- c(latitude, latitude - 1, latitude, latitude + 1, latitude)
-    xaxis <- c(longitude, longitude, longitude + 1, longitude, longitude - 1)
-    # content on the current field and the fields around the robot
-    content_current <- grid[yaxis[1], xaxis[1]]
-    content_north <- grid[yaxis[2], xaxis[2]]
-    content_east <- grid[yaxis[3], xaxis[3]]
-    content_south <- grid[yaxis[4], xaxis[4]]
-    content_west <- grid[yaxis[5], xaxis[5]]
+  # current situation the robot finds itself in
+  situation <- lookup_situation(individual, grid, latitude[i-1], longitude[i-1])
+  # next move that will be performed according to the handbook
+  next_move <- individual[situation,]$Move
 
-
-    # change of the current position of the robot according to the move that
-    # corresponds to his current position
-    if (next_move == "North" & content_north != "Wall"){
-      latitude  <- latitude - 1
-      longitude <- longitude
-    } else if (next_move == "East" & content_east != "Wall"){
-      latitude <- latitude
-      longitude <- longitude + 1
-    } else if (next_move == "South" & content_south != "Wall"){
-      latitude <- latitude + 1
-      longitude <- longitude
-    } else if (next_move == "West" & content_west != "Wall"){
-      latitude <- latitude
-      longitude <- longitude - 1
-
-      # if he moves into a wall he bounces back to his old position and is fined 5 points
-    } else  if (next_move == "North" & content_north == "Wall"){
-      latitude <- latitude
-      longitude <- longitude
-
-    } else if (next_move == "East" & content_east == "Wall"){
-      latitude <- latitude
-      longitude <- longitude
-
-    } else if (next_move == "South" & content_south == "Wall"){
-      latitude <- latitude
-      longitude <- longitude
-
-    } else if(next_move == "West" & content_west == "Wall"){
-      latitude <- latitude
-      longitude <- longitude
+  # needed for the moving and scoring:
+  # coordintes of the current field and north east south and west
+  yaxis <- c(latitude[i-1], latitude[i-1] - 1, latitude[i-1], latitude[i-1] + 1, latitude[i-1])
+  xaxis <- c(longitude[i-1], longitude[i-1], longitude[i-1] + 1, longitude[i-1], longitude[i-1] - 1)
+  # content on the current field and the fields around the robot
+  content_current <- grid[yaxis[1], xaxis[1]]
+  content_north <- grid[yaxis[2], xaxis[2]]
+  content_east <- grid[yaxis[3], xaxis[3]]
+  content_south <- grid[yaxis[4], xaxis[4]]
+  content_west <- grid[yaxis[5], xaxis[5]]
 
 
-      # if he picks-up his location doesnt change
-    } else if (next_move == "Stay"){
-      latitude <- latitude
-      longitude <- longitude
+# change of the current position of the robot according to the move that
+# corresponds to his current position
+if (next_move == "North" & content_north != "Wall"){
+  latitude[i]  <- latitude[i-1] - 1
+  longitude[i] <- longitude[i-1]
+} else if (next_move == "East" & content_east != "Wall"){
+  latitude[i] <- latitude[i-1]
+  longitude[i] <- longitude[i-1] + 1
+} else if (next_move == "South" & content_south != "Wall"){
+  latitude[i] <- latitude[i-1] + 1
+  longitude[i] <- longitude[i-1]
+} else if (next_move == "West" & content_west != "Wall"){
+  latitude[i] <- latitude[i-1]
+  longitude[i] <- longitude[i-1] - 1
 
-      # if he picks up sth his location doesnt change but the environment changes
-    } else if(next_move == "Pick-Up" & content_current == "Evidence"){
-      latitude <- latitude
-      longitude <- longitude
-      grid[xaxis[1], yaxis[1]] <- "Empty"
+  # if he moves into a wall he bounces back to his old position and is fined 5 points
+} else  if (next_move == "North" & content_north == "Wall"){
+  latitude[i] <- latitude[i-1]
+  longitude[i] <- longitude[i-1]
 
-      # if he picks up but there is nothing, he is fined
-    } else if(next_move == "Pick-Up" & content_current == "Empty"){
-      latitude <- latitude
-      longitude <- longitude
+} else if (next_move == "East" & content_east == "Wall"){
+  latitude[i] <- latitude[i-1]
+  longitude[i] <- longitude[i-1]
 
-    }
-    df_latitude[i+1] <- latitude
-    df_longitude[i+1] <- longitude
-  }
+} else if (next_move == "South" & content_south == "Wall"){
+  latitude[i] <- latitude[i-1]
+  longitude <- longitude[i-1]
 
-  return(data.frame(df_latitude, df_longitude))
+} else if(next_move == "West" & content_west == "Wall"){
+  latitude[i] <- latitude[i-1]
+  longitude[i] <- longitude[i-1]
+
+
+  # if he picks-up his location doesnt change
+} else if (next_move == "Stay"){
+  latitude[i] <- latitude[i-1]
+  longitude[i] <- longitude[i-1]
+
+  # if he picks up sth his location doesnt change but the environment changes
+} else if(next_move == "Pick-Up" & content_current == "Evidence"){
+  latitude[i] <- latitude[i-1]
+  longitude[i] <- longitude[i-1]
+  grid[xaxis[1], yaxis[1]] <- "Empty"
+
+  # if he picks up but there is nothing, he is fined
+} else if(next_move == "Pick-Up" & content_current == "Empty"){
+  latitude[i] <- latitude[i-1]
+  longitude[i] <- longitude[i-1]
+
+}
 }
