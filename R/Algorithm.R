@@ -360,9 +360,9 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps){
 
 #' One Life Cycle of a Population
 #'
-#' \code{life} is used to simulate one life cycle of a population.
+#' \code{life_cycle} is used to simulate one life cycle of a population.
 #'
-#' @usage life(population, grid_size, n_evidence, steps, sessions)
+#' @usage life_cycle(population, grid_size, n_evidence, steps, sessions)
 #'
 #' @param population a list containing a population made with \code{create_population}
 #' @param grid_size a numeric vector of the form c(nrow, ncol)
@@ -386,15 +386,18 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps){
 #' @export
 #'
 #' @examples
-#' life(population = first_population, grid_size = c(10, 10), steps = 100,
+#' life_cycle(population = first_population, grid_size = c(10, 10), steps = 100,
 #' sessions = 200)
-life <- function(population, grid_size, n_evidence, steps, sessions){
+life_cycle <- function(population, grid_size, n_evidence, steps, sessions){
 
   if(class(population) != "list" && class(population[[1]]) != "data.frame"){
     stop ("Provide a population containing a list of individual strategy tables.")
   }
   if(class(sessions) != "numeric"){
     stop ("Indicate how many times the grid configuration should change.")
+  }
+  if(sessions <= 1){
+    stop ("There has to be more than one session.")
   }
 
   # an empty matrix of scores
@@ -414,83 +417,108 @@ life <- function(population, grid_size, n_evidence, steps, sessions){
   return(scores)
 }
 
-#' Evolution of the Best Strategy
+
+#' Creating the next Population
 #'
-#' \code{evolve} is used to apply evolution to the current population of strategies
-#' to create a new population.
+#' \code{next_generation} is used to apply genetic recombination and mutation
+#' to the current population of strategies to create a new population.
 #'
-#' @usage evolve(population, all_scores)
+#' @usage next_generation(population, all_scores)
 #'
 #' @param population a list containing an initial population made with
 #' \code{create_population}
 #' @param all_scores a matrix containing all scores for each individual and each
-#' repetition
+#' repetition \code{life_cycle}
 #'
 #' @details Evolution works in the following way:
 #' The strategies with the two highest scores are chosen as the parent individuals.
-#' The two parents are mated to create children.
+#' The two parents are mated to create offspring
 #'
 #' A position at which to split the two parent stategies is randomly chosen.
-#' One child receives the genetic material from parent A before that position and
-#' after that position from parent B. The second child is formed vice versa.
-#' Mutation
-#' The two children are then put into the new population.
+#' The offspring receives the genetic material from parent A before that position
+#' and from parent B after that position .
+#' Note: This is not done vice versa; otherwise the same situation can possibly
+#' exist twice in one strategy table.
 #'
+#' With a small probability, 1 to 5 mutations occur in a random row of the strategy
+#' table.
+#'
+#' The function creates as much offspring as there were individuals in the previous
+#' population to fill up the new population.
 #'
 #' @return a new population
 #' @export
 #'
 #' @examples
-#' evolve(first_population, scores)
-evolve <- function(population, all_scores){
+#' next_generation(first_population, scores)
+next_generation <- function(population, all_scores){
+
+  if(class(population) != "list" && class(population[[1]]) != "data.frame"){
+    stop ("Provide a population containing a list of individual strategy tables.")
+  }
+  if(class(all_scores) != "matrix"){
+    stop ("Provide a matrix containing the scores of each strategy in the different
+          sessions.")
+  }
+
+  # calculation of mean scores per individual over the different sessions
   mean_scores <- apply(all_scores, 1, mean)
 
-  best_scores <- which(mean_scores == sort(mean_scores, decreasing = TRUE)[1] |
-          mean_scores == sort(mean_scores, decreasing = TRUE)[2])
-
   # chose the two individuals with the best scores as the parents of the new population
+  best_scores <- which(mean_scores == sort(mean_scores, decreasing = TRUE)[1] |
+                       mean_scores == sort(mean_scores, decreasing = TRUE)[2])
   parent1 <- population[[best_scores[1]]]
   parent2 <- population[[best_scores[2]]]
 
-
   new_population <- list()
+
   for(i in 1:length(population)){
 
     # recombination of parental genetic material at a random section
     genetic_recombination <- sample(1:nrow(parent1), 1)
-    genetic_material1 <- parent1[1:genetic_recombination,]
-    genetic_material2 <- parent2[(genetic_recombination+1):nrow(parent2),]
+    genetic_material1     <- parent1[1:genetic_recombination,]
+    genetic_material2     <- parent2[(genetic_recombination+1):nrow(parent2),]
 
-     # two children are created by combining the parental genetic material
-    new_population[[i]] <- rbind(genetic_material1, genetic_material2)
+    # offspring is created by combining the parental genetic material
+    new_population[[i]]   <- rbind(genetic_material1, genetic_material2)
 
-  # with a small probability movements in each child mutate
-  probability <- sample(c(TRUE, FALSE), 1, prob = c(0.2, 0.8))
+    # with a small probability movements in offspring mutates
+    possible_mutation <- sample(c(TRUE, FALSE), 1, prob = c(0.2, 0.8))
 
-  if(probability == TRUE){
-  # sampling how many mutations should occur
-  n_mutations <- sample(1:5, 1)
+     if(possible_mutation == TRUE){
+      # sampling how many mutations should occur
+      # I chose a maximum of 5 mutations arbitrarly
+      n_mutations <- sample(1:5, 1)
 
-  # randomly chosing rows that will be mutated
-  mutation <- sample(1:nrow(parent1), n_mutations)
-  moves1 <- c("North", "East", "South", "West", "Pick-Up")
-  moves2 <- c("North", "East", "South", "West", "Stay", "Pick-Up")
+      # randomly chosing rows that will be mutated
+      mutation <- sample(1:nrow(parent1), n_mutations)
+      moves    <- c("North", "East", "South", "West", "Stay", "Pick-Up")
+      new_population[[i]][mutation,]$Move <- sample(moves, length(mutation))
+     }
 
-   if(any(mutation == 1)){
-   # stay can't be the first move
-   new_population[[i]][mutation,]$Move <- sample(moves1, length(mutation))
-   } else {
-  new_population[[i]][mutation,]$Move <- sample(moves2, length(mutation))
-   }
-  }
-  # changing the row numbers
-  rownames(new_population[[i]]) <- 1:nrow(new_population[[i]])
+    # the row numbers are messed up because of the combination of parental material
+    # changing the row numbers back to 1:243
+    rownames(new_population[[i]]) <- 1:nrow(new_population[[i]])
   }
   return(new_population)
 }
 
-# This function is supposed to call all other functions
-# but it doesn't work
+
+#' Evolution of the Best Strategy
+#'
+#' \code{evolution} is used to evolve the best strategy table.
+#'
+#' @param population_size
+#' @param grid_size
+#' @param n_evidence
+#' @param steps
+#' @param sessions
+#' @param generations
+#'
+#' @return
+#' @export
+#'
+#' @examples
 evolution <- function(population_size, grid_size, n_evidence, steps, sessions, generations){
 
   # create first grid
@@ -503,10 +531,10 @@ evolution <- function(population_size, grid_size, n_evidence, steps, sessions, g
 
     # let this population walk in one grid for x steps then change the grid
     # repeat this procedure for y sessions
-    all_scores <- life(population, grid_size, n_evidence, steps, sessions)
+    all_scores <- life_cycle(population, grid_size, n_evidence, steps, sessions)
 
     # chose the two best strategies and recombine them with mutations to a new population
-    population <- evolve(population, all_scores)
+    population <- next_generation(population, all_scores)
   }
 
   return(population)
@@ -515,7 +543,7 @@ evolution <- function(population_size, grid_size, n_evidence, steps, sessions, g
 last_population <- evolution(population_size = 50, grid_size = c(5, 5),
                              n_evidence = 10, steps = 100, sessions = 10, generations = 10)
 
-all_scores <- life(last_population, grid_size = c(5, 5), n_evidence = 10, steps = 100, sessions = 10)
+all_scores <- life_cycle(last_population, grid_size = c(5, 5), n_evidence = 10, steps = 100, sessions = 10)
 
 x <- which.max(apply(all_scores, 1, mean))
 individual <- last_population[[x]]
