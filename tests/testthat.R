@@ -63,7 +63,7 @@ test_that("stop messages occur correctly", {
   expect_error(lookup_situation(individual, grid, latitude = 2, longitude = 3))
 })
 
-test_that("create_population returns a number", {
+test_that("lookup_situation returns a number", {
   grid <- create_grid(c(5, 5), 5)
   individual <- create_population(10)[[10]]
   model <- lookup_situation(individual, grid, latitude = 4, longitude = 3)
@@ -136,5 +136,20 @@ test_that("score cannot be over the maximum possibe score of n_evidence * 10", {
   population <- create_population(10)
   expect_lt(sum(life_cycle(population, grid_size = c(5, 5), n_evidence = 11,
                             steps = 3, sessions = 3) > 5*11), 1)
+})
+
+# function next_generation
+test_that("stop messages occur correctly", {
+  population <- create_population(10)
+  expect_error(next_generation(population, all_scores = c(1, 2, 3)))
+})
+
+test_that("next_generation returns a list containing data.frames", {
+  population <- create_population(100)
+  all_score  <- life_cycle(population = population, grid_size = c(10, 10),
+                           n_evidence = 10, steps = 10, sessions = 5)
+  model <- next_generation(population, all_scores)
+  expect_is(model, "list")
+  expect_is(model[[1]], "data.frame")
 })
 
