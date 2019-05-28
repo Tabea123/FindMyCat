@@ -14,7 +14,7 @@ devtools::use_package("gtools")
 #'
 #' @usage create_grid(grid_size, n_evidence)
 #'
-#' @param grid_size a numeric vector of the form c(max of x-axis, max of y-axis)
+#' @param grid_size a numeric vector of the form c(nrows, ncolumns)
 #' which gives the size of the grid in x and y direction.
 #' @param n_evidence a number specifing the amount of evidence in the grid
 #'
@@ -23,7 +23,7 @@ devtools::use_package("gtools")
 #' The evidence is sampled and added to the grid. Finally a wall is being built
 #' around the grid.
 #'
-#' @return a matrix containing a grid
+#' @return A matrix containing a grid.
 #' @export
 #'
 #' @examples
@@ -31,27 +31,18 @@ devtools::use_package("gtools")
 create_grid <- function(grid_size, n_evidence){
 
   if(!any(is.numeric(grid_size))){
-    # grid_size have to be numeric
-    stop ("The coordinates have to be numeric")
+    stop ("Grid coordinates of grid boundaries have to be numeric")
   }
-
   if(length(grid_size) != 2){
     stop ("Give the length of the grid on the y-axis and x-axis")
   }
-
-  if(grid_size[1] !=  grid_size[2]){
-    stop ("The grid has to be quadratic.")
-  }
-
   if(is.numeric(n_evidence) == FALSE){
     # number of evidence have to be numeric
     stop ("Indicate how much evidence (numeric) you want to place in the grid.")
   }
-
   if(n_evidence <= 0){
     stop ("Number evidence has to be more than 0.")
   }
-
   if(n_evidence > grid_size[1]*grid_size[2]){
     stop ("There can not be more evidence than fields in the grid.")
   }
@@ -62,24 +53,24 @@ create_grid <- function(grid_size, n_evidence){
   grid[0:nrow(grid),0:ncol(grid)] <- "Empty"
 
   # sample evidence randomly and add it to the grid
-  evidence <- sample(0:grid_size[1]^2, n_evidence, replace = F)
+  evidence <- sample(0:(grid_size[1]*grid_size[2]), n_evidence, replace = F)
   grid[evidence] <- "Evidence"
 
   # in a last step the walls are added to the grid
   # this is done with cbind() and rbind() to avoid overwriting evidence
   grid <- rbind(grid, matrix("Wall", nrow = 1, ncol = grid_size[2]))
   grid <- rbind(matrix("Wall", nrow = 1, ncol = grid_size[2]), grid)
-  grid <- cbind(grid, matrix("Wall", ncol = 1, nrow = grid_size[2]+2))
-  grid <- cbind(matrix("Wall", ncol = 1, nrow = grid_size[2]+2), grid)
+  grid <- cbind(grid, matrix("Wall", ncol = 1, nrow = grid_size[1]+2))
+  grid <- cbind(matrix("Wall", ncol = 1, nrow = grid_size[1]+2), grid)
 
   return(grid)
 }
 
-# grid <- create_grid(grid_size = c(10, 10), n_evidence = 11) # this function takes 0.001 secs
 
 #' Create A Population
 #'
-#' \code{create_poulation} A function to create the primary population of candidate strategies.
+#' \code{create_poulation} A function to create the primary population of
+#' candidate strategies.
 #'
 #' @usage create_population(individuals)
 #'
@@ -91,37 +82,32 @@ create_grid <- function(grid_size, n_evidence){
 #' In each situation, the robot can perform one of the following six actions:
 #' move north, east, south, and west, stay in one field, or pick up something.
 #' An individual is one specific strategy to move through the grid.
-#' \code{create_poulation} creates for each individual in the population a random strategy table:
+#' \code{create_poulation} creates for each individual in the population a random
+#' strategy table:
 #' 243 moves are randomly sampled and assigned to each of the situations.
 #'
-#' @return a list containing a population of x data.frames of solutions
+#' @return A list containing a population of x data.frames of solutions.
 #' @export
 #'
 #' @examples
 #' create_population(100)
 create_population <- function(individuals){
 
-  # funktioniert nicht :(
-  if (!requireNamespace("gtools", quietly = TRUE)) {
-    stop("Package \"gtools\" needed for this function to work. Please install it.",
-         call. = FALSE)
+  if (!require("gtools")) {
+    stop("Package \"gtools\" needed for this function to work. Please install it.")
   }
-
-  if(is.numeric(individuals) == FALSE){
-    stop ("argument 'individuals' must be numeric") # individuals has to be numeric
+  if(!is.numeric(individuals)){
+    stop ("Argument 'individuals' must be numeric.")
   }
-
   if(individuals <= 5){
     stop ("The genepool of your population is too small.
-          The population needs to have more than five individuals")
+          The population needs to have more than five individuals.")
   }
-
-  population_of_strategies <- list()
 
   # There are five different sites each with three possibles types of content
   sites   <- c("Current", "North", "East", "South", "West")
   content <- c("Wall", "Empty", "Evidence")
-  # There are 243 possible situations in total
+  # There are 243 possible situations in total (permutation of sites and content)
   situations <- data.frame(permutations(n = length(content), r = length(sites),
                                         v = content, repeats.allowed = T))
   colnames(situations) <- sites
@@ -129,13 +115,17 @@ create_population <- function(individuals){
   # In each situation, the robot can perform one of the following six actions:
   # move north, east, south, and west, stay in one field, or pick up something.
   moves <- c("North", "East", "South", "West", "Stay", "Pick-Up")
-  Move <- character(nrow(situations))
+  Move  <- character(nrow(situations))
 
+  population_of_strategies <- list()
+
+  # for the initial population, strategy tables are created by storing
+  # randomly sampled movements next to situations
   for (j in 1:individuals){
-    # generating a sequence of 243 random movements
+    # a random sequence of 243 movements is created
     Move <- sample(moves, nrow(situations), replace = T)
 
-    # storing the movements next to the situations
+    # the movements are stored next to the situations
     individual_strategy <- data.frame(situations, Move)
 
     # creating a dataframe with all 200 individuals
@@ -144,35 +134,37 @@ create_population <- function(individuals){
   return(population_of_strategies)
 }
 
-population <- create_population(50)
 
 #' Retrieve from the Strategy Table the Number of the Current Situation
 #'
-#' \code{lookup_situation} looks up the robots current situation in his strategy table.
+#' \code{lookup_situation} retrieves the robots current situation in his strategy
+#' table.
 #'
-#' @param individual one individual strategy taken form the population made with \code{create_poulation}
-#' @param grid a matrix.
-#' @param latitude a number indicating the current position of the robot on the y-axis.
-#' @param longitude a number indicating the current position of the robot on the xaxis.
+#' @param individual one individual strategy taken form the population made with
+#' \code{create_poulation}
+#' @param grid a matrix made with \code{create_grid}.
+#' @param latitude a number indicating the current position of the robot on the
+#' y-axis.
+#' @param longitude a number indicating the current position of the robot on the
+#' x-axis.
 #'
-#' @details To decide which move to perform, the robot looks up his current
+#' @details To decide which move to perform next, the robot looks up his current
 #' situation in his strategy table. There he finds the corresponding action.
 #'
 #' @return a number from the robots' strategy table
 #' @export
 #'
 #' @examples
-#' lookup_situation(individual, grid, latitude = 9, longitude = 5)
+#' lookup_situation(individual = population1[[2]], grid = my_grid, latitude = 9,
+#' longitude = 5)
 lookup_situation <- function(individual, grid, latitude = 2, longitude = 2){
 
   if(class(individual) != "data.frame"){
     stop ("Provide a data.frame containing the individual strategy table.")
   }
-
   if(class(grid) != "matrix"){
     stop ("Provide a matrix containing the grid.")
   }
-
   if(length(latitude) != 1){
     stop ("Give the current position of the robot on the y-axis.")
   }
@@ -199,17 +191,16 @@ lookup_situation <- function(individual, grid, latitude = 2, longitude = 2){
   yaxis <- c(latitude, latitude - 1, latitude, latitude + 1, latitude)
   xaxis <- c(longitude, longitude, longitude + 1, longitude, longitude - 1)
 
-  # looking up which number in the strategy table corresponds to the current situation
+  # looking up which number in the strategy table corresponds to the current
+  # situation
   number <- which(situation[,1] == grid[yaxis[1], xaxis[1]] &
-          situation[,2] == grid[yaxis[2], xaxis[2]] &
-          situation[,3] == grid[yaxis[3], xaxis[3]] &
-          situation[,4] == grid[yaxis[4], xaxis[4]] &
-          situation[,5] == grid[yaxis[5], xaxis[5]])
+                  situation[,2] == grid[yaxis[2], xaxis[2]] &
+                  situation[,3] == grid[yaxis[3], xaxis[3]] &
+                  situation[,4] == grid[yaxis[4], xaxis[4]] &
+                  situation[,5] == grid[yaxis[5], xaxis[5]])
 
   return(as.numeric(number))
 }
-
-# This function takes 0.0009 sec
 
 
 #' Move the Robot and Score his Actions
@@ -217,14 +208,17 @@ lookup_situation <- function(individual, grid, latitude = 2, longitude = 2){
 #' \code{move_score} is used to move the robot through the grid according to his
 #' strategy table and score his actions.
 #'
-#' @usage move_score(individual, grid, latitude, longitude, steps, score)
+#' @usage move_score(individual, grid, latitude, longitude, steps)
 #'
-#' @param individual one individual strategy taken form the population made with \code{create_poulation}
+#' @param individual one individual strategy taken form the population made with
+#' \code{create_poulation}
 #' @param grid an object of class matrix made with \code{create_grid}
-#' @param latitude a number indicating the current position of the robot on the y-axis
-#' @param longitude a number indicating the current position of the robot on the x-axis
-#' @param steps a number indicating how many moves the robot should walk in the grid
-#' @param score a number indicating the current score of the strategy
+#' @param latitude a number indicating the current position of the robot on the
+#' y-axis
+#' @param longitude a number indicating the current position of the robot on the
+#' x-axis
+#' @param steps a number indicating how many moves the robot should walk in the
+#' grid
 #'
 #' @details The robot begins at his starting position (latitude = 2, longitude = 2).
 #' The robot then follows one strategy for X actions. The number of actions is
@@ -232,43 +226,67 @@ lookup_situation <- function(individual, grid, latitude = 2, longitude = 2){
 #' direction of his next movement, the robot walks. If his next action is to stay,
 #' the robot stops moving.
 #'
-#' The \code{score} of the strategy is the number of bonus- and minuspoints the
+#' The score of the strategy is the number of bonus- and minuspoints the
 #' robot accumulates in a session.
 #' If the robot is in the same site as a piece of evidence and picks it up,
 #' he gets ten points.
-#' If he bends down to pick up in a site where there is no evidence, he is fined one point.
-#' If he crashes into a wall, he is fined five points and bounces back into the current site.
+#' If he bends down to pick up in a site where there is no evidence, he is fined
+#' one point.
+#' If he crashes into a wall, he is fined five points and bounces back into the
+#' current site.
 #'
 #' @return The robots current position and the score.
 #' @export
 #'
 #' @examples
-#' move_score(population[[1]], grid = grid, latitude = 5, longitude = 5, steps = 100, score = 0)
-move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, score = 0){
+#' move_score(population[[1]], grid = grid, latitude = 5, longitude = 5, steps = 100)
+move_score <- function(individual, grid, latitude = 2, longitude = 2, steps){
 
   if(class(individual) != "data.frame"){
     stop ("Provide a data.frame containing the individual strategy table.")
   }
+  if(class(grid) != "matrix"){
+    stop ("Provide a matrix containing the grid.")
+  }
+  if(length(latitude) != 1){
+    stop ("Give the current position of the robot on the y-axis.")
+  }
+  if(length(longitude) != 1){
+    stop ("Give the current position of the robot on the x-axis.")
+  }
+  if(longitude <= 1 || longitude >= ncol(grid)){
+    stop ("The current position of the robot can't be outside the grid or on a wall.")
+  }
+  if(latitude <= 1 || latitude >= nrow(grid)){
+    stop ("The current position of the robot can't be outside the grid or on a wall.")
+  }
+  if(class(longitude) != "numeric"){
+    stop ("Coordinates have to be numeric.")
+  }
+  if(class(latitude) != "numeric"){
+    stop ("Coordinates have to be numeric.")
+  }
+  if(class(steps) != "numeric"){
+    stop ("Indicate how many steps the robot walks in one grid configuration.")
+  }
+
+  score <- 0
 
   for(i in 1:steps){
-  next_move <- NULL
-  # current situation the robot finds itself in
+  # current situation of the robot
   situation <- lookup_situation(individual, grid, latitude, longitude)
-  print(situation)
-  # next move that will be performed according to the handbook
+
+  # next move that will be performed according to the strategy table
   next_move <- as.character(individual[situation,]$Move)
-
-
 
   # the first move cannot be stay; otherwise the robot gets caught up in an endless
   # loop and makes no minus- or bonuspoints
   # this skews the fitness of this strategy, making it score better than it is
   if(i == 1 & next_move == "Stay"){
     first_move <- c("North", "East", "South", "West", "Pick-Up")
-    next_move <- sample(first_move, 1, replace = F)
+    next_move  <- sample(first_move, 1, replace = F)
     individual[situation,]$Move <- next_move
   }
-
 
   # needed for the moving and scoring:
   # coordintes of the current field and north east south and west
@@ -276,10 +294,10 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, sco
   xaxis <- c(longitude, longitude, longitude + 1, longitude, longitude - 1)
   # content on the current field and the fields around the robot
   content_current <- grid[yaxis[1], xaxis[1]]
-  content_north <- grid[yaxis[2], xaxis[2]]
-  content_east <- grid[yaxis[3], xaxis[3]]
-  content_south <- grid[yaxis[4], xaxis[4]]
-  content_west <- grid[yaxis[5], xaxis[5]]
+  content_north   <- grid[yaxis[2], xaxis[2]]
+  content_east    <- grid[yaxis[3], xaxis[3]]
+  content_south   <- grid[yaxis[4], xaxis[4]]
+  content_west    <- grid[yaxis[5], xaxis[5]]
 
 
   # change of the current position of the robot according to the move that
@@ -288,55 +306,55 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, sco
     latitude  <- latitude - 1
     longitude <- longitude
   } else if (next_move == "East" & content_east != "Wall"){
-    latitude <- latitude
+    latitude  <- latitude
     longitude <- longitude + 1
   } else if (next_move == "South" & content_south != "Wall"){
-    latitude <- latitude + 1
+    latitude  <- latitude + 1
     longitude <- longitude
   } else if (next_move == "West" & content_west != "Wall"){
-    latitude <- latitude
+    latitude  <- latitude
     longitude <- longitude - 1
 
     # if he moves into a wall he bounces back to his old position and is fined 5 points
   } else  if (next_move == "North" & content_north == "Wall"){
-    latitude <- latitude
+    latitude  <- latitude
     longitude <- longitude
     score <- score - 5
   } else if (next_move == "East" & content_east == "Wall"){
-    latitude <- latitude
+    latitude  <- latitude
     longitude <- longitude
     score <- score - 5
   } else if (next_move == "South" & content_south == "Wall"){
-    latitude <- latitude
+    latitude  <- latitude
     longitude <- longitude
     score <- score - 5
   } else if(next_move == "West" & content_west == "Wall"){
-    latitude <- latitude
+    latitude  <- latitude
     longitude <- longitude
     score <- score - 5
 
-    # if he picks-up his location doesnt change
+    # if he stays his location doesnt change
   } else if (next_move == "Stay"){
-    latitude <- latitude
+    latitude  <- latitude
     longitude <- longitude
 
-    # if he picks up sth his location doesnt change but the environment changes
+    # if he picks up a piece of evidence succesfully his location doesnt change
+    # but the environment changes because his current site is then empty
+    # he also receives 10 bonuspoints
   } else if(next_move == "Pick-Up" & content_current == "Evidence"){
-    latitude <- latitude
+    latitude  <- latitude
     longitude <- longitude
-    grid[xaxis[1], yaxis[1]] <- "Empty"
+    grid[latitude, longitude] <- "Empty"
     score <- score + 10
-    # if he picks up but there is nothing, he is fined
+    # if he picks up but there is nothing, he is fined 1 point
   } else if(next_move == "Pick-Up" & content_current == "Empty"){
-    latitude <- latitude
+    latitude  <- latitude
     longitude <- longitude
     score <- score - 1
   }
   }
-
   return(data.frame(latitude, longitude, score))
 }
-
 
 
 #' One Life Cycle of a Population
@@ -346,11 +364,12 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, sco
 #' @usage life(population, grid_size, n_evidence, steps, sessions)
 #'
 #' @param population a list containing a population made with \code{create_population}
-#' @param grid_size a numeric vector of the form c(max of x-axis, max of y-axis)
-#' which gives the size of the grid in x and y direction.
+#' @param grid_size a numeric vector of the form c(nrow, ncol)
+#' which gives the size of the grid
 #' @param n_evidence a number specifing the amount of evidence in the grid
 #' @param steps a number indicating how many moves the robot should walk in the grid
-#' @param sessions a number indicating how many sessions one
+#' @param sessions a number indicating how many times the gfid configuration is
+#' chnaged
 #'
 #' @details The fitness of an individual strategy is determined by seeing how well
 #' the strategy works in X different sessions.
@@ -366,21 +385,31 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps, sco
 #' @export
 #'
 #' @examples
-#' life(population = first_population, grid_size = c(10, 10), steps = 100, sessions = 200)
+#' life(population = first_population, grid_size = c(10, 10), steps = 100,
+#' sessions = 200)
 life <- function(population, grid_size, n_evidence, steps, sessions){
-  scores <- matrix(0, nrow = length(population), ncol = sessions)
-  grid <- create_grid(grid_size, n_evidence )
 
-  # loops over all strategy individuals
+  if(class(population) != "list" && class(population[[1]]) != "data.frame"){
+    stop ("Provide a population containing a list of individual strategy tables.")
+  }
+  if(class(sessions) != "numeric"){
+    stop ("Indicate how many times the grid configuration should change.")
+  }
+
+  # an empty matrix of scores
+  # each row represents one individual, each columns represents one session with one
+  # grid configuration
+  scores <- matrix(0, nrow = length(population), ncol = sessions)
+
+  # loops over all individuals
   # repeats move_score and change of grid as many times as indicates by the user
   # with sessions
   for(j in 1:sessions){
   for(k in 1:length(population)){
-      scores[k,j] <- move_score(population[[k]], grid, steps = steps)$score
       grid <- create_grid(grid_size, n_evidence)
+      scores[k,j] <- move_score(population[[k]], grid, steps = steps)$score
     }
   }
-
   return(scores)
 }
 
@@ -442,15 +471,15 @@ evolve <- function(population, all_scores){
 
   # randomly chosing rows that will be mutated
   mutation <- sample(1:nrow(parent1), n_mutations)
-  #moves1 <- c("North", "East", "South", "West", "Pick-Up")
+  moves1 <- c("North", "East", "South", "West", "Pick-Up")
   moves2 <- c("North", "East", "South", "West", "Stay", "Pick-Up")
 
-  # if(any(mutation == 1)){
-  # # stay can't be the first move
-  # new_population[[i]][mutation,]$Move <- sample(moves1, length(mutation))
-  # } else {
+   if(any(mutation == 1)){
+   # stay can't be the first move
+   new_population[[i]][mutation,]$Move <- sample(moves1, length(mutation))
+   } else {
   new_population[[i]][mutation,]$Move <- sample(moves2, length(mutation))
-  # }
+   }
   }
   # changing the row numbers
   rownames(new_population[[i]]) <- 1:nrow(new_population[[i]])
@@ -482,9 +511,9 @@ evolution <- function(population_size, grid_size, n_evidence, steps, sessions, g
 }
 
 last_population <- evolution(population_size = 50, grid_size = c(5, 5),
-                             n_evidence = 10, steps = 20, sessions = 8, generations = 5)
+                             n_evidence = 10, steps = 100, sessions = 10, generations = 10)
 
-all_scores <- life(last_population, grid_size = c(5, 5), n_evidence = 10, steps = 20, sessions = 8)
+all_scores <- life(last_population, grid_size = c(5, 5), n_evidence = 10, steps = 100, sessions = 10)
 
 x <- which.max(apply(all_scores, 1, mean))
 individual <- last_population[[x]]
@@ -567,3 +596,4 @@ if (next_move == "North" & content_north != "Wall"){
 
 }
 }
+
