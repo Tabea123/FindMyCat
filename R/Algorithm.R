@@ -77,8 +77,8 @@ create_grid <- function(grid_size, n_evidence){
 #' @param individuals a number
 #'
 #' @details There are five sites: the current field and the fields north, east,
-#' south, and west of the robot. Each of the sites can contain a wall, evidence or nothing.
-#' Following, the robot can be in 243 possible situations.
+#' south, and west of the robot. Each of the sites can contain a wall, evidence
+#' or nothing. Following, the robot can be in 243 possible situations.
 #' In each situation, the robot can perform one of the following six actions:
 #' move north, east, south, and west, stay in one field, or pick up something.
 #' An individual is one specific strategy to move through the grid.
@@ -315,7 +315,8 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps){
     latitude  <- latitude
     longitude <- longitude - 1
 
-    # if he moves into a wall he bounces back to his old position and is fined 5 points
+    # if he moves into a wall he bounces back to his old position and is fined
+    # 5 points
   } else  if (next_move == "North" & content_north == "Wall"){
     latitude  <- latitude
     longitude <- longitude
@@ -420,7 +421,8 @@ life <- function(population, grid_size, n_evidence, steps, sessions){
 #'
 #' @usage evolve(population, all_scores)
 #'
-#' @param population a list containing an initial population made with \code{create_population}
+#' @param population a list containing an initial population made with
+#' \code{create_population}
 #' @param all_scores a matrix containing all scores for each individual and each
 #' repetition
 #'
