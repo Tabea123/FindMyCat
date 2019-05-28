@@ -368,9 +368,10 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps){
 #' @param grid_size a numeric vector of the form c(nrow, ncol)
 #' which gives the size of the grid
 #' @param n_evidence a number specifing the amount of evidence in the grid
-#' @param steps a number indicating how many moves the robot should walk in the grid
-#' @param sessions a number indicating how many times the gfid configuration is
-#' chnaged
+#' @param steps a number indicating how many moves the robot should walk in one
+#' grid configuration
+#' @param sessions a number indicating how many times the grid configuration is
+#' changed
 #'
 #' @details The fitness of an individual strategy is determined by seeing how well
 #' the strategy works in X different sessions.
@@ -386,8 +387,8 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps){
 #' @export
 #'
 #' @examples
-#' life_cycle(population = first_population, grid_size = c(10, 10), steps = 100,
-#' sessions = 200)
+#' life_cycle(population = first_population, grid_size = c(10, 10), n_evidence = 10,
+#' steps = 100, sessions = 200)
 life_cycle <- function(population, grid_size, n_evidence, steps, sessions){
 
   if(class(population) != "list" && class(population[[1]]) != "data.frame"){
@@ -457,8 +458,7 @@ next_generation <- function(population, all_scores){
     stop ("Provide a population containing a list of individual strategy tables.")
   }
   if(class(all_scores) != "matrix"){
-    stop ("Provide a matrix containing the scores of each strategy in the different
-          sessions.")
+    stop ("Provide a matrix containing the scores of each strategy in the different sessions.")
   }
 
   # calculation of mean scores per individual over the different sessions
@@ -508,12 +508,18 @@ next_generation <- function(population, all_scores){
 #'
 #' \code{evolution} is used to evolve the best strategy table.
 #'
-#' @param population_size
-#' @param grid_size
-#' @param n_evidence
-#' @param steps
-#' @param sessions
-#' @param generations
+#' @param population_size a number indicating the amount of individuals in each
+#' population
+#' @param grid_size a numeric vector of the form c(nrows, ncolumns)
+#' which gives the size of the grid in x and y direction.
+#' @param n_evidence a number specifing the amount of evidence in the grid
+#' @param steps a number indicating how many moves the robot should walk in one
+#' grid configuration
+#' @param sessions a number indicating how many times the grid configuration is
+#' changed in one life cycle
+#' @param generations a number indicating how many populations should be evolved
+#'
+#' @details \code{evolution} calls all subordinate functions.
 #'
 #' @return
 #' @export
@@ -521,10 +527,9 @@ next_generation <- function(population, all_scores){
 #' @examples
 evolution <- function(population_size, grid_size, n_evidence, steps, sessions, generations){
 
-  # create first grid
-  grid <- create_grid(grid_size, n_evidence)
+  sammelcontainer <- list()
 
-  # create first population
+  # create first populationg
   population <- create_population(population_size)
 
   for(i in 1:generations){
@@ -532,13 +537,22 @@ evolution <- function(population_size, grid_size, n_evidence, steps, sessions, g
     # let this population walk in one grid for x steps then change the grid
     # repeat this procedure for y sessions
     all_scores <- life_cycle(population, grid_size, n_evidence, steps, sessions)
-
+    sammelcontainer[[i]] <- apply(all_scores, 1, mean)
     # chose the two best strategies and recombine them with mutations to a new population
     population <- next_generation(population, all_scores)
   }
 
-  return(population)
+  return(sammelcontainer)
 }
+
+scores <- evolution(population_size = 100, grid_size = c(5, 5),
+                    n_evidence = 10, steps = 100, sessions = 50, generations = 50)
+
+x <- numeric(5)
+for(t in 1:5){
+x[t] <- mean(scores[[t]])
+}
+plot(x)
 
 last_population <- evolution(population_size = 50, grid_size = c(5, 5),
                              n_evidence = 10, steps = 100, sessions = 10, generations = 10)
