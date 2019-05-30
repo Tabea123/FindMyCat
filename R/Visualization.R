@@ -1,3 +1,7 @@
+usethis::use_package("ggplot2")
+usethis::use_package("gganimate")
+usethis::use_package("ggimage")
+
 # Storing the coordinates
 individual <- evolution(100, c(10, 10), 11, 100, 10, 15)
 
@@ -108,11 +112,6 @@ return(data.frame(latitude, longitude))
 }
 
 # Visualization of the best route
-
-# packages
-library(ggplot2)
-library(gganimate)
-library(ggimage)
 
 step <- 1:30 # needed for transition_time
 
