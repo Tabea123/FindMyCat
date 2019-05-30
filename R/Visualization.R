@@ -1,12 +1,37 @@
+# Storing the coordinates
+individual <- evolution(100, c(10, 10), 11, 100, 10, 15)
 
 steps <- 30
 
-latitude <- numeric(30)
-latitude[1] <- 2
-longitude <- numeric(30)
-longitude[1] <- 2
+grid_size <- c(10, 10)
+evidence_latitude <- c(3, 6, 4, 2, 1)
+evidence_longitude <- c(2, 4, 8, 1, 9)
 
-grid <- create_grid(c(5, 5), 10)
+visualize_path <- function(individual, steps, grid_size, evidence_latitude,
+                           evidence_longitude){
+
+# create an empty grid
+# the size is specified by the user
+grid <- matrix(NA, grid_size[1], grid_size[2])
+grid[0:nrow(grid),0:ncol(grid)] <- "Empty"
+
+# sample evidence randomly and add it to the grid
+for(i in 1:length(evidence_latitude)){
+grid[evidence_latitude[i], evidence_longitude[i]] <- "Evidence"
+}
+
+# in a last step the walls are added to the grid
+# this is done with cbind() and rbind() to avoid overwriting evidence
+grid <- rbind(grid, matrix("Wall", nrow = 1, ncol = grid_size[2]))
+grid <- rbind(matrix("Wall", nrow = 1, ncol = grid_size[2]), grid)
+grid <- cbind(grid, matrix("Wall", ncol = 1, nrow = grid_size[1]+2))
+grid <- cbind(matrix("Wall", ncol = 1, nrow = grid_size[1]+2), grid)
+
+# starting point is (2,2)
+latitude <- numeric(steps)
+latitude[1] <- 2
+longitude <- numeric(steps)
+longitude[1] <- 2
 
 for(i in 2:steps){
 
@@ -79,6 +104,9 @@ for(i in 2:steps){
   }
 }
 
+return(data.frame(latitude, longitude))
+}
+
 # Visualization of the best route
 
 # packages
@@ -86,21 +114,26 @@ library(ggplot2)
 library(gganimate)
 library(ggimage)
 
-step <- 1:200 # needed for transition_time
+step <- 1:30 # needed for transition_time
 
 # plotting
+coordinates <- data.frame(latitude, longitude)
+df_footprints <- data.frame(evidence_latitude, evidence_longitude)
 
 # later on the right image for the right animal has to be implemented
-image <- "https://jeroenooms.github.io/images/frink.png"
-image2 <- "https://www.clipartqueen.com/image-files/paw-prints-clipart-dog-paw-prints.png"
+researcher <- "https://jeroenooms.github.io/images/frink.png"
 
+cat <- "https://www.clipartqueen.com/image-files/paw-prints-clipart-dog-paw-prints.png"
+horse <- "https://cdn.onlinewebfonts.com/svg/img_72745.png"
+bird <- "http://www.clker.com/cliparts/a/f/b/e/13209639322102727323Bird%20Footprints.svg.hi.png"
+bear <- "http://clipart-library.com/images/6cr54jKgi.gif"
 
 # axis limits will be given by territory parameters
-ggplot(individual_solution, aes(df.longitude, df.latitude, size = 3)) +
-  geom_image(aes(image=image), size=.05) +
-  geom_image(aes(latitude, longitude, image = image2), size = 0.1,
+ggplot(coordinates, aes(longitude, latitude, size = 3)) +
+  geom_image(aes(image = researcher), size = .05) +
+  geom_image(aes(evidence_latitude, evidence_longitude, image = horse), size = 0.1,
              data = df_footprints, inherit.aes = FALSE) +
-  labs(title = 'Step: {frame_time}', x = 'Longitude', y = 'Latitude') +
-  xlim(xstart, xend) +
-  ylim(ystart, yend) +
-  transition_time(step, range = c(1L, 100L))
+  labs(x = 'Longitude', y = 'Latitude') +
+  xlim(1, ncol(grid)) +
+  ylim(1, nrow(grid)) +
+  transition_states(step)
