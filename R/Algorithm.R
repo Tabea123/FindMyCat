@@ -520,124 +520,58 @@ next_generation <- function(population, all_scores){
 #' @param generations a number indicating how many populations should be evolved
 #'
 #' @details \code{evolution} calls all subordinate functions.
+#' First, the initial population of random strategies is generated with
+#' \code{create_population}.
+#' The fitness of each individual strategy is calculated with the function \code{life_cycle}.
+#' Fitness is determined by seeing how well a strategy lets the robot do on X
+#' different sessions. The number of \code{sessions} is determined
+#' by the user. One session consists of putting the robot at his starting position
+#' on a grid and then letting the robot move for X \code{steps}.
+#' The score of the strategy in each session is the number of bonus- and minuspoints
+#' the robot accumulates. The strategy’s fitness is its average score over the
+#' different sessions, each of which has a different grid configuration.
+#' A grid is generated with the arguments \code{grid_size} and \code{n_evidence}.
+#' The position of the evidence is randomly chosen.
 #'
-#' @return
+#' With the function \code{next_generation} evolution is applied to the current
+#' population to create a new population of strategies.
+#' The two individuals from the current population with the highest scores are chosen
+#' as the parents of the new generation. The two parents are mated to create offspring.
+#' At a randomly chosen position the parental strategies are split. Offpring is
+#' created by recombining the pieces of parental material. With a small probability,
+#' mutations accur. Offspring is generated until the next population has the same
+#' amount of indvidiuals as the first generation.
+#'
+#' This procedure is repeated for as many \code{generations} as the user indicates.
+#' \code{evolution} returns the best strategy table.
+#'
+#' @return the individual with the highest score
 #' @export
 #'
 #' @examples
 evolution <- function(population_size, grid_size, n_evidence, steps, sessions, generations){
 
-  sammelcontainer <- list()
-
   # create first populationg
   population <- create_population(population_size)
 
   for(i in 1:generations){
+    # the function is very slow; printing will let the user know, what is currently
+    # happening behing closed curtains
+    print(paste("generation", i, "in progress"))
 
     # let this population walk in one grid for x steps then change the grid
     # repeat this procedure for y sessions
     all_scores <- life_cycle(population, grid_size, n_evidence, steps, sessions)
-    sammelcontainer[[i]] <- apply(all_scores, 1, mean)
     # chose the two best strategies and recombine them with mutations to a new population
     population <- next_generation(population, all_scores)
   }
 
-  return(sammelcontainer)
-}
+  # retrieving the scores from the last population
+  all_scores <- life_cycle(population, grid_size, n_evidence, steps, sessions)
+  # chosing the individual with the highest score
+  x <- which.max(apply(all_scores, 1, mean))
+  individual <- last_population[[x]]
 
-scores <- evolution(population_size = 100, grid_size = c(5, 5),
-                    n_evidence = 10, steps = 100, sessions = 50, generations = 50)
-
-x <- numeric(5)
-for(t in 1:5){
-x[t] <- mean(scores[[t]])
-}
-plot(x)
-
-last_population <- evolution(population_size = 50, grid_size = c(5, 5),
-                             n_evidence = 10, steps = 100, sessions = 10, generations = 10)
-
-all_scores <- life_cycle(last_population, grid_size = c(5, 5), n_evidence = 10, steps = 100, sessions = 10)
-
-x <- which.max(apply(all_scores, 1, mean))
-individual <- last_population[[x]]
-steps <- 30
-
-latitude <- numeric(30)
-latitude[1] <- 2
-longitude <- numeric(30)
-longitude[1] <- 2
-
-grid <- create_grid(c(5, 5), 10)
-
-for(i in 2:steps){
-
-  # current situation the robot finds itself in
-  situation <- lookup_situation(individual, grid, latitude[i-1], longitude[i-1])
-  # next move that will be performed according to the handbook
-  next_move <- individual[situation,]$Move
-
-  # needed for the moving and scoring:
-  # coordintes of the current field and north east south and west
-  yaxis <- c(latitude[i-1], latitude[i-1] - 1, latitude[i-1], latitude[i-1] + 1, latitude[i-1])
-  xaxis <- c(longitude[i-1], longitude[i-1], longitude[i-1] + 1, longitude[i-1], longitude[i-1] - 1)
-  # content on the current field and the fields around the robot
-  content_current <- grid[yaxis[1], xaxis[1]]
-  content_north <- grid[yaxis[2], xaxis[2]]
-  content_east <- grid[yaxis[3], xaxis[3]]
-  content_south <- grid[yaxis[4], xaxis[4]]
-  content_west <- grid[yaxis[5], xaxis[5]]
-
-
-# change of the current position of the robot according to the move that
-# corresponds to his current position
-if (next_move == "North" & content_north != "Wall"){
-  latitude[i]  <- latitude[i-1] - 1
-  longitude[i] <- longitude[i-1]
-} else if (next_move == "East" & content_east != "Wall"){
-  latitude[i] <- latitude[i-1]
-  longitude[i] <- longitude[i-1] + 1
-} else if (next_move == "South" & content_south != "Wall"){
-  latitude[i] <- latitude[i-1] + 1
-  longitude[i] <- longitude[i-1]
-} else if (next_move == "West" & content_west != "Wall"){
-  latitude[i] <- latitude[i-1]
-  longitude[i] <- longitude[i-1] - 1
-
-  # if he moves into a wall he bounces back to his old position and is fined 5 points
-} else  if (next_move == "North" & content_north == "Wall"){
-  latitude[i] <- latitude[i-1]
-  longitude[i] <- longitude[i-1]
-
-} else if (next_move == "East" & content_east == "Wall"){
-  latitude[i] <- latitude[i-1]
-  longitude[i] <- longitude[i-1]
-
-} else if (next_move == "South" & content_south == "Wall"){
-  latitude[i] <- latitude[i-1]
-  longitude <- longitude[i-1]
-
-} else if(next_move == "West" & content_west == "Wall"){
-  latitude[i] <- latitude[i-1]
-  longitude[i] <- longitude[i-1]
-
-
-  # if he picks-up his location doesnt change
-} else if (next_move == "Stay"){
-  latitude[i] <- latitude[i-1]
-  longitude[i] <- longitude[i-1]
-
-  # if he picks up sth his location doesnt change but the environment changes
-} else if(next_move == "Pick-Up" & content_current == "Evidence"){
-  latitude[i] <- latitude[i-1]
-  longitude[i] <- longitude[i-1]
-  grid[xaxis[1], yaxis[1]] <- "Empty"
-
-  # if he picks up but there is nothing, he is fined
-} else if(next_move == "Pick-Up" & content_current == "Empty"){
-  latitude[i] <- latitude[i-1]
-  longitude[i] <- longitude[i-1]
-
-}
+  return(individual)
 }
 
