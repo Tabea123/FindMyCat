@@ -474,6 +474,7 @@ next_generation <- function(population, all_scores){
   # chose the two individuals with the best scores as the parents of the new population
   best_scores <- which(mean_scores == sort(mean_scores, decreasing = TRUE)[1] |
                        mean_scores == sort(mean_scores, decreasing = TRUE)[2])
+
   parent1 <- population[[best_scores[1]]]
   parent2 <- population[[best_scores[2]]]
 
@@ -490,7 +491,7 @@ next_generation <- function(population, all_scores){
     new_population[[i]]   <- rbind(genetic_material1, genetic_material2)
 
     # with a small probability movements in offspring mutates
-    possible_mutation <- sample(c(TRUE, FALSE), 1, prob = c(0.2, 0.8))
+    possible_mutation     <- sample(c(TRUE, FALSE), 1, prob = c(0.2, 0.8))
 
      if(possible_mutation == TRUE){
       # sampling how many mutations should occur
