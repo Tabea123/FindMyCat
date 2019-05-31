@@ -11,13 +11,14 @@ steps <- 30
 grid_size <- c(10, 10)
 evidence_latitude <- c(3, 6, 4, 2, 1)
 evidence_longitude <- c(2, 4, 8, 1, 9)
+animal <- "cat"
 
-#' Documentation of the Path
+#' Visualization of the Path
 #'
-#' \code{path} is used to move the robot through the grid according to his
-#' strategy table and to document his path.
+#' \code{visualize_path} is used to plot the robot's moves.
 #'
-#' @usage path(individual, grid_size, evidence_latitude, evidence_longitude, steps)
+#' @usage visualize_path(individual, grid_size, evidence_latitude, evidence_longitude,
+#' steps, animal)
 #'
 #' @param individual one individual strategy taken form the population made with
 #' \code{create_poulation}.
@@ -29,7 +30,7 @@ evidence_longitude <- c(2, 4, 8, 1, 9)
 #' on the y-axis.
 #' @param steps a number indicating how many moves the robot should walk in the
 #' grid.
-#' @param animal the animal that is being searched.
+#' @param animal the animal that is being searched. (see @details)
 #'
 #' @details The robot begins his path at his starting position (latitude = 2, longitude = 2).
 #' The robot then follows the given strategy \code{individual} for X \code{steps}.
@@ -38,16 +39,15 @@ evidence_longitude <- c(2, 4, 8, 1, 9)
 #' current site.
 #' If his next action is to stay or to pick up, the robot stops moving.
 #' The robots path is visualized with \code{ggplot}.
+#' The following animal footprints can be plotted: cat, horse, bird or bear.
 #'
 #' @return a plot showing the path
 #' @export
 #'
-#'
-#'
 #' @examples
 #' population1 <- create_population(30)
 #' visualize_path(individual = population1[[3]], grid_size = c(5, 7), evidence_latitude =
-#' c(3, 2, 4), evidence_longitude = c(1, 6, 5), steps = 30, animal = bird)
+#' c(3, 2, 4), evidence_longitude = c(1, 6, 5), steps = 30, animal = "bird")
 visualize_path <- function(individual, grid_size, evidence_latitude,
                            evidence_longitude, steps, animal){
 
@@ -79,8 +79,17 @@ visualize_path <- function(individual, grid_size, evidence_latitude,
   if(class(steps) != "numeric"){
     stop ("Indicate how many steps the robot walks in one grid configuration.")
   }
-  if(animal != cat | horse | bird | bear){
-    stop ("The function can only display the footprints of cats, horses, birds, and bears.")
+  # if(animal != cat | horse | bird | bear){
+  #   stop ("The function can only display the footprints of cats, horses, birds, and bears.")
+  # }
+  if (!require("ggplot2")) {
+    stop("Package \"ggplot2\" needed for this function to work. Please install it.")
+  }
+  if (!require("gganimate")) {
+    stop("Package \"gganimate\" needed for this function to work. Please install it.")
+  }
+  if (!require("ggimage")) {
+    stop("Package \"ggimage\" needed for this function to work. Please install it.")
   }
 
 # create an empty grid
@@ -120,10 +129,10 @@ for(i in 2:steps){
   xaxis <- c(longitude[i-1], longitude[i-1], longitude[i-1] + 1, longitude[i-1], longitude[i-1] - 1)
   # content on the current field and the fields around the robot
   content_current <- grid[yaxis[1], xaxis[1]]
-  content_north <- grid[yaxis[2], xaxis[2]]
-  content_east <- grid[yaxis[3], xaxis[3]]
-  content_south <- grid[yaxis[4], xaxis[4]]
-  content_west <- grid[yaxis[5], xaxis[5]]
+  content_north   <- grid[yaxis[2], xaxis[2]]
+  content_east    <- grid[yaxis[3], xaxis[3]]
+  content_south   <- grid[yaxis[4], xaxis[4]]
+  content_west    <- grid[yaxis[5], xaxis[5]]
 
 
   # change of the current position of the robot according to the move that
@@ -132,18 +141,18 @@ for(i in 2:steps){
     latitude[i]  <- latitude[i-1] - 1
     longitude[i] <- longitude[i-1]
   } else if (next_move == "East" & content_east != "Wall"){
-    latitude[i] <- latitude[i-1]
+    latitude[i]  <- latitude[i-1]
     longitude[i] <- longitude[i-1] + 1
   } else if (next_move == "South" & content_south != "Wall"){
-    latitude[i] <- latitude[i-1] + 1
+    latitude[i]  <- latitude[i-1] + 1
     longitude[i] <- longitude[i-1]
   } else if (next_move == "West" & content_west != "Wall"){
-    latitude[i] <- latitude[i-1]
+    latitude[i]  <- latitude[i-1]
     longitude[i] <- longitude[i-1] - 1
 
     # if he moves into a wall he bounces back to his old position
   } else  if (next_move == "North" & content_north == "Wall"){
-    latitude[i] <- latitude[i-1]
+    latitude[i]  <- latitude[i-1]
     longitude[i] <- longitude[i-1]
 
   } else if (next_move == "East" & content_east == "Wall"){
@@ -152,53 +161,61 @@ for(i in 2:steps){
 
   } else if (next_move == "South" & content_south == "Wall"){
     latitude[i] <- latitude[i-1]
-    longitude <- longitude[i-1]
+    longitude   <- longitude[i-1]
 
   } else if(next_move == "West" & content_west == "Wall"){
-    latitude[i] <- latitude[i-1]
+    latitude[i]  <- latitude[i-1]
     longitude[i] <- longitude[i-1]
 
 
     # if he picks-up his location doesnt change
   } else if (next_move == "Stay"){
-    latitude[i] <- latitude[i-1]
+    latitude[i]  <- latitude[i-1]
     longitude[i] <- longitude[i-1]
 
     # if he picks up sth his location doesnt change but the environment changes
   } else if(next_move == "Pick-Up" & content_current == "Evidence"){
-    latitude[i] <- latitude[i-1]
+    latitude[i]  <- latitude[i-1]
     longitude[i] <- longitude[i-1]
     grid[xaxis[1], yaxis[1]] <- "Empty"
 
     # if he picks up but there is nothing, his location doesnt change and the
     # environment doesnt change either
   } else if(next_move == "Pick-Up" & content_current == "Empty"){
-    latitude[i] <- latitude[i-1]
+    latitude[i]  <- latitude[i-1]
     longitude[i] <- longitude[i-1]
   }
 }
 
-coordinates <- data.frame(latitude, longitude)
+coordinates   <- data.frame(latitude, longitude)
 df_footprints <- data.frame(evidence_latitude, evidence_longitude)
 
 # pictures for funsies
 researcher <- "https://jeroenooms.github.io/images/frink.png"
-cat <- "https://www.clipartqueen.com/image-files/paw-prints-clipart-dog-paw-prints.png"
-horse <- "https://cdn.onlinewebfonts.com/svg/img_72745.png"
-bird <- "http://www.clker.com/cliparts/a/f/b/e/13209639322102727323Bird%20Footprints.svg.hi.png"
-bear <- "http://clipart-library.com/images/6cr54jKgi.gif"
+image <- NULL
+if(animal == "cat"){
+  image <- "https://www.clipartqueen.com/image-files/paw-prints-clipart-dog-paw-prints.png"
+} else if(animal == "horse"){
+  image <- "https://cdn.onlinewebfonts.com/svg/img_72745.png"
+} else if(animal == "bird"){
+  image <- "http://www.clker.com/cliparts/a/f/b/e/13209639322102727323Bird%20Footprints.svg.hi.png"
+} else if(animal == "bear"){
+  image <- "http://clipart-library.com/images/6cr54jKgi.gif"
+}
+
+tstates <- 1:steps
 
 # gganimate is used to show the movement of the researcher, each step is one point
 # in time
 # axis limits are given with the territory parameters
 plot <- ggplot(coordinates, aes(longitude, latitude, size = 3)) +
   geom_image(aes(image = researcher), size = .05) +
-  geom_image(aes(evidence_latitude, evidence_longitude, image = animal), size = 0.1,
-             data = df_footprints, inherit.aes = FALSE) +
+  geom_image(aes(evidence_latitude, evidence_longitude, image = image),
+                 size = 0.1, data = df_footprints, inherit.aes = FALSE) +
   labs(x = 'Longitude', y = 'Latitude') +
   xlim(1, grid_size[2]) +
   ylim(1, grid_size[1]) +
-  transition_states(steps)
+  transition_states(tstates)
 
 return(plot)
 }
