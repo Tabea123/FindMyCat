@@ -31,13 +31,12 @@ usethis::use_package("gtools")
 create_grid <- function(grid_size, n_evidence){
 
   if(!any(is.numeric(grid_size))){
-    stop ("Grid coordinates of grid boundaries have to be numeric")
+    stop ("Grid coordinates of grid boundaries have to be numeric.")
   }
   if(length(grid_size) != 2){
-    stop ("Give the length of the grid on the y-axis and x-axis")
+    stop ("Give the length of the grid on the y-axis and x-axis.")
   }
   if(is.numeric(n_evidence) == FALSE){
-    # number of evidence have to be numeric
     stop ("Indicate how much evidence (numeric) you want to place in the grid.")
   }
   if(n_evidence <= 0){
