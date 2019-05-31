@@ -4,15 +4,6 @@ usethis::use_package("ggimage")
 
 # Storing the coordinates
 
-individual <- evolution(100, c(10, 10), 11, 100, 10, 15)
-
-steps <- 30
-
-grid_size <- c(10, 10)
-evidence_latitude <- c(3, 6, 4, 2, 1)
-evidence_longitude <- c(2, 4, 8, 1, 9)
-animal <- "cat"
-
 #' Visualization of the Path
 #'
 #' \code{visualize_path} is used to plot the robot's moves.
@@ -30,24 +21,27 @@ animal <- "cat"
 #' on the y-axis.
 #' @param steps a number indicating how many moves the robot should walk in the
 #' grid.
-#' @param animal the animal that is being searched. (see @details)
+#' @param animal the animal that is being searched (see details).
 #'
 #' @details The robot begins his path at his starting position (latitude = 2, longitude = 2).
 #' The robot then follows the given strategy \code{individual} for X \code{steps}.
 #' If there is no wall in the direction of his next movement, the robot walks.
-#' If he crashes into a wall, he is fined five points and bounces back into the
+#' If he crashes into a wall, he bounces back into the
 #' current site.
 #' If his next action is to stay or to pick up, the robot stops moving.
-#' The robots path is visualized with \code{ggplot}.
-#' The following animal footprints can be plotted: cat, horse, bird or bear.
+#' The robot's path is visualized with \code{ggplot}.
 #'
-#' @return a plot showing the path
+#' #' \code{visualize_path} can only display the following animal footprints: cat, horse,
+#' bird or bear.
+#'
+#' @return an animated plot.
 #' @export
 #'
 #' @examples
 #' population1 <- create_population(30)
-#' visualize_path(individual = population1[[3]], grid_size = c(5, 7), evidence_latitude =
-#' c(3, 2, 4), evidence_longitude = c(1, 6, 5), steps = 30, animal = "bird")
+#' visualize_path(individual = population1[[3]], grid_size = c(5, 7),
+#' evidence_latitude = c(3, 2, 4), evidence_longitude = c(1, 6, 5),
+#' steps = 30, animal = "bird")
 visualize_path <- function(individual, grid_size, evidence_latitude,
                            evidence_longitude, steps, animal){
 
@@ -79,9 +73,6 @@ visualize_path <- function(individual, grid_size, evidence_latitude,
   if(class(steps) != "numeric"){
     stop ("Indicate how many steps the robot walks in one grid configuration.")
   }
-  # if(animal != cat | horse | bird | bear){
-  #   stop ("The function can only display the footprints of cats, horses, birds, and bears.")
-  # }
   if (!require("ggplot2")) {
     stop("Package \"ggplot2\" needed for this function to work. Please install it.")
   }
@@ -211,7 +202,7 @@ tstates <- 1:steps
 plot <- ggplot(coordinates, aes(longitude, latitude, size = 3)) +
   geom_image(aes(image = researcher), size = .05) +
   geom_image(aes(evidence_latitude, evidence_longitude, image = image),
-                 size = 0.1, data = df_footprints, inherit.aes = FALSE) +
+                 size = 0.05, data = df_footprints, inherit.aes = FALSE) +
   labs(x = 'Longitude', y = 'Latitude') +
   xlim(1, grid_size[2]) +
   ylim(1, grid_size[1]) +
