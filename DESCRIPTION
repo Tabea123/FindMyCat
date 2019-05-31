@@ -4,7 +4,7 @@ Title: An implementation of a genetic algorithm
 Version: 0.1.0
 Authors@R: person("Tabea", "Hoffmann", email = "tabea.hoffmann@student.uva.nl",
   role = c("aut", "cre"))
-Maintainer: tabea.hoffmann at student.uva.nl
+Maintainer: <tabea.hoffmann@student.uva.nl>
 Description: Use four spaces when indenting paragraphs within the Description.
     An implementation of a genetic algorithm. The input to the genetic algorithm 
     has several parts: a population of possible solutions to a task, an environment 
@@ -16,7 +16,10 @@ License: What license is it under?
 Encoding: UTF-8
 LazyData: true
 Imports: 
-    gtools
+    gtools,
+    ggplot2,
+    gganimate,
+    ggimage
 Suggests: 
     testthat
 RoxygenNote: 6.1.1
