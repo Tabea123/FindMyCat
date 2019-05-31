@@ -5,7 +5,7 @@
 #   Test Package:              'Ctrl + Shift + T'
 
 # packages that are required
-devtools::use_package("gtools")
+usethis::use_package("gtools")
 
 
 #' Creat A Grid
@@ -16,12 +16,12 @@ devtools::use_package("gtools")
 #'
 #' @param grid_size a numeric vector of the form c(nrows, ncolumns)
 #' which gives the size of the grid in x and y direction.
-#' @param n_evidence a number specifing the amount of evidence in the grid
+#' @param n_evidence a number specifing the amount of evidence in the grid.
 #'
 #' @details The user can specify how big the grid is and how much evidence will
-#' be placed in the grid. The function first creates a grid that is completely empty.
-#' The evidence is sampled and added to the grid. Finally a wall is being built
-#' around the grid.
+#' be placed in the grid. The function first creates a grid that is completely
+#' empty. The evidence is sampled and added to the grid at random. In a last step
+#' a wall is being built around the grid.
 #'
 #' @return A matrix containing a grid.
 #' @export
@@ -74,14 +74,14 @@ create_grid <- function(grid_size, n_evidence){
 #'
 #' @usage create_population(individuals)
 #'
-#' @param individuals a number
+#' @param individuals a number indicating how many individuals are in one population.
 #'
-#' @details There are five sites: the current field and the fields north, east,
-#' south, and west of the robot. Each of the sites can contain a wall, evidence
-#' or nothing. Following, the robot can be in 243 possible situations.
-#' In each situation, the robot can perform one of the following six actions:
-#' move north, east, south, and west, stay in one field, or pick up something.
-#' An individual is one specific strategy to move through the grid.
+#' @details There are five sites the robot can see: the current field and the
+#' fields north, east, south, and west of the robot. Each of the sites can
+#' contain a wall, evidence or nothing. Consequently, the robot can possibly be
+#' in 243 situations. In each situation, the robot can perform one of the following
+#' six actions: move north, east, south, and west, stay in one field, or pick up
+#' something. An individual is one specific strategy to move through the grid.
 #' \code{create_poulation} creates for each individual in the population a random
 #' strategy table:
 #' 243 moves are randomly sampled and assigned to each of the situations.
@@ -141,7 +141,7 @@ create_population <- function(individuals){
 #' table.
 #'
 #' @param individual one individual strategy taken form the population made with
-#' \code{create_poulation}
+#' \code{create_poulation}.
 #' @param grid a matrix made with \code{create_grid}.
 #' @param latitude a number indicating the current position of the robot on the
 #' y-axis.
@@ -151,10 +151,12 @@ create_population <- function(individuals){
 #' @details To decide which move to perform next, the robot looks up his current
 #' situation in his strategy table. There he finds the corresponding action.
 #'
-#' @return a number from the robots' strategy table
+#' @return A number from the robots' strategy table.
 #' @export
 #'
 #' @examples
+#' population1 <- create_population(50)
+#' my_grid <- create_grid(c(5, 5), 8)
 #' lookup_situation(individual = population1[[2]], grid = my_grid, latitude = 9,
 #' longitude = 5)
 lookup_situation <- function(individual, grid, latitude = 2, longitude = 2){
@@ -206,19 +208,19 @@ lookup_situation <- function(individual, grid, latitude = 2, longitude = 2){
 #' Move the Robot and Score his Actions
 #'
 #' \code{move_score} is used to move the robot through the grid according to his
-#' strategy table and score his actions.
+#' strategy table and to score his actions.
 #'
 #' @usage move_score(individual, grid, latitude, longitude, steps)
 #'
 #' @param individual one individual strategy taken form the population made with
-#' \code{create_poulation}
-#' @param grid an object of class matrix made with \code{create_grid}
+#' \code{create_poulation}.
+#' @param grid an object of class matrix made with \code{create_grid}.
 #' @param latitude a number indicating the current position of the robot on the
-#' y-axis
+#' y-axis.
 #' @param longitude a number indicating the current position of the robot on the
-#' x-axis
+#' x-axis.
 #' @param steps a number indicating how many moves the robot should walk in the
-#' grid
+#' grid.
 #'
 #' @details The robot begins at his starting position (latitude = 2, longitude = 2).
 #' The robot then follows one strategy for X actions. The number of actions is
@@ -235,10 +237,12 @@ lookup_situation <- function(individual, grid, latitude = 2, longitude = 2){
 #' If he crashes into a wall, he is fined five points and bounces back into the
 #' current site.
 #'
-#' @return The robots current position and the score.
+#' @return The robots position after taking all steps and the resulting score.
 #' @export
 #'
 #' @examples
+#' population <- create_population(100)
+#' grid <- create_grid(c(10, 12), 11)
 #' move_score(population[[1]], grid = grid, latitude = 5, longitude = 5, steps = 100)
 move_score <- function(individual, grid, latitude = 2, longitude = 2, steps){
 
@@ -364,19 +368,20 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps){
 #'
 #' @usage life_cycle(population, grid_size, n_evidence, steps, sessions)
 #'
-#' @param population a list containing a population made with \code{create_population}
+#' @param population a list containing a population made with \code{create_population}.
 #' @param grid_size a numeric vector of the form c(nrow, ncol)
-#' which gives the size of the grid
-#' @param n_evidence a number specifing the amount of evidence in the grid
+#' which gives the size of the grid.
+#' @param n_evidence a number specifing the amount of evidence in the grid.
 #' @param steps a number indicating how many moves the robot should walk in one
-#' grid configuration
+#' grid configuration.
 #' @param sessions a number indicating how many times the grid configuration is
-#' changed
+#' changed.
 #'
 #' @details The fitness of an individual strategy is determined by seeing how well
 #' the strategy works in X different sessions.
 #'
-#' In one session, the robot walks X steps in a grid and is scored on his actions.
+#' In one session, the robot walks X steps in a grid and is scored on his actions
+#' (see function \code{move_score}).
 #' A new session is initiated with changing the configuration of the grid. Consequently,
 #' the robot walks again and is scored. The number of sessions is indicated by
 #' the user with the argument \code{sessions}.
@@ -387,6 +392,7 @@ move_score <- function(individual, grid, latitude = 2, longitude = 2, steps){
 #' @export
 #'
 #' @examples
+#' first_population <- create_population(50)
 #' life_cycle(population = first_population, grid_size = c(10, 10), n_evidence = 10,
 #' steps = 100, sessions = 200)
 life_cycle <- function(population, grid_size, n_evidence, steps, sessions){
@@ -427,30 +433,32 @@ life_cycle <- function(population, grid_size, n_evidence, steps, sessions){
 #' @usage next_generation(population, all_scores)
 #'
 #' @param population a list containing an initial population made with
-#' \code{create_population}
+#' \code{create_population}.
 #' @param all_scores a matrix containing all scores for each individual and each
-#' repetition \code{life_cycle}
+#' repetition made with \code{life_cycle}.
 #'
 #' @details Evolution works in the following way:
 #' The strategies with the two highest scores are chosen as the parent individuals.
-#' The two parents are mated to create offspring
-#'
+#' The two parents are mated to create offspring.
 #' A position at which to split the two parent stategies is randomly chosen.
 #' The offspring receives the genetic material from parent A before that position
-#' and from parent B after that position .
+#' and from parent B after that position.
 #' Note: This is not done vice versa; otherwise the same situation can possibly
 #' exist twice in one strategy table.
 #'
 #' With a small probability, 1 to 5 mutations occur in a random row of the strategy
-#' table.
+#' table. A mutation replaces the move that is inherited by the parent with a
+#' random movement.
 #'
 #' The function creates as much offspring as there were individuals in the previous
 #' population to fill up the new population.
 #'
-#' @return a new population
+#' @return a new population of the same size as the previous population.
 #' @export
 #'
 #' @examples
+#' first_population <- create_population(100)
+#' scores <- life_cycle(first_population, c(5, 5), 9, 100, 200)
 #' next_generation(first_population, scores)
 next_generation <- function(population, all_scores){
 
@@ -508,16 +516,19 @@ next_generation <- function(population, all_scores){
 #'
 #' \code{evolution} is used to evolve the best strategy table.
 #'
+#' @usage evolution(population_size, grid_size, n_evidence, steps, sessions,
+#' generations)
+#'
 #' @param population_size a number indicating the amount of individuals in each
-#' population
+#' population.
 #' @param grid_size a numeric vector of the form c(nrows, ncolumns)
 #' which gives the size of the grid in x and y direction.
-#' @param n_evidence a number specifing the amount of evidence in the grid
+#' @param n_evidence a number specifing the amount of evidence in the grid.
 #' @param steps a number indicating how many moves the robot should walk in one
-#' grid configuration
+#' grid configuration.
 #' @param sessions a number indicating how many times the grid configuration is
-#' changed in one life cycle
-#' @param generations a number indicating how many populations should be evolved
+#' changed in one life cycle.
+#' @param generations a number indicating how many populations should be evolved.
 #'
 #' @details \code{evolution} calls all subordinate functions.
 #' First, the initial population of random strategies is generated with
@@ -540,37 +551,49 @@ next_generation <- function(population, all_scores){
 #' At a randomly chosen position the parental strategies are split. Offpring is
 #' created by recombining the pieces of parental material. With a small probability,
 #' mutations accur. Offspring is generated until the next population has the same
-#' amount of indvidiuals as the first generation.
+#' amount of individuals as the first generation.
 #'
 #' This procedure is repeated for as many \code{generations} as the user indicates.
 #' \code{evolution} returns the best strategy table.
 #'
-#' @return the individual with the highest score
+#' @return the individual with the highest score.
 #' @export
 #'
 #' @examples
+#' evolution(100, c(10, 10), 11, 100, 50, 1000)
 evolution <- function(population_size, grid_size, n_evidence, steps, sessions, generations){
+
+  if(class(generations) != "numeric"){
+    stop ("Indicate with a number how many generations you want the evolution to last.")
+  }
+
+  if(length(generations) > 1){
+    stop ("Indicate with only one number how many generations you want the evolution to last.")
+  }
 
   # create first populationg
   population <- create_population(population_size)
 
   for(i in 1:generations){
+
     # the function is very slow; printing will let the user know, what is currently
-    # happening behing closed curtains
+    # happening behind closed curtains
     print(paste("generation", i, "in progress"))
 
     # let this population walk in one grid for x steps then change the grid
     # repeat this procedure for y sessions
     all_scores <- life_cycle(population, grid_size, n_evidence, steps, sessions)
+
     # chose the two best strategies and recombine them with mutations to a new population
     population <- next_generation(population, all_scores)
   }
 
   # retrieving the scores from the last population
   all_scores <- life_cycle(population, grid_size, n_evidence, steps, sessions)
+
   # chosing the individual with the highest score
   x <- which.max(apply(all_scores, 1, mean))
-  individual <- last_population[[x]]
+  individual <- population[[x]]
 
   return(individual)
 }
