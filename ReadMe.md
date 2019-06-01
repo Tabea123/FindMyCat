@@ -154,11 +154,6 @@ To make use of the package ‘findmycat’ follow these steps:
 -   Run `evolution`. Don’t forget to store the result in a variable.
     (e.g., `scores <- evolution(...)`)
 
--   Run `?path` to find out how to use the function.
-
--   Run `path`. Don’t forget to store the result in a variable. (e.g.,
-    `path <- path(...)`)
-
 -   Run `?visualize_path` to find out how to use the function.
 
 -   Run `visualize_path`. Caution: To run this function you need a
